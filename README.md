@@ -46,9 +46,9 @@ ramp: **cyan = still → amber → hot pink = going off.**
 
 ![Per-person overlay](docs/media/overlay.jpg)
 
-*Cyan skeletons are spectators standing still; the pink ones in the middle are
-the people actually dancing. Nobody labelled that — it falls out of the motion
-measurement.*
+*Cyan skeletons are the bystanders filming from the edge; the warm ones in the
+middle are the people actually dancing. Nobody labelled that — the split falls
+out of the motion measurement alone.*
 
 ---
 
@@ -176,5 +176,6 @@ would produce a fabricated BPM.
 AGPL-3.0. Swapping the detector for an Apache-2.0 model (RT-DETR, D-FINE) would
 allow a permissive licence.
 
-Demo footage: [Pexels](https://www.pexels.com/) free licence. The synthetic
-track catalogue is fictional.
+Demo footage: [Pixabay](https://pixabay.com/) content licence (four camera
+angles of the same open-air dance class). The synthetic track catalogue is
+fictional.
