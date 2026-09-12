@@ -1,8 +1,12 @@
 video:
-  display_width: 960      # lado largo del frame enviado al navegador
-  det_imgsz: 640
+  display_width: 960      # long side of the frame sent to the browser
+  # Detection size drives how many people are found, and costs CPU:
+  #   640  -> ~15 people on the demo clip, ~11 fps   (fast)
+  #   960  -> ~20 people,  ~6 fps                    (default, balanced)
+  #  1280  -> ~27 people,  ~4 fps                    (crowd mode, used for the README stills)
+  det_imgsz: 960
   det_conf: 0.3
-  flow_width: 320         # lado largo reducido para optical flow
+  flow_width: 384         # reduced long side for optical flow
   jpeg_quality: 70
   send_fps: 18            # frames/s del video en el dashboard (display desacoplado)
   webcam_index: 0         # indice de la camara para el modo directo

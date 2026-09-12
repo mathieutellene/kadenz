@@ -112,6 +112,18 @@ Model weights (~7 MB) download on first run into `models/`. Click **START
 EVENT** and pick any video of a crowd. Nothing is stored: uploads are wiped on
 start and on each new file.
 
+**Detection size is the main quality/speed dial** (`det_imgsz` in `config.yaml`).
+On the demo clip, measured on a laptop CPU with no GPU:
+
+| `det_imgsz` | People found | Inference |
+|---|---|---|
+| 640 | ~15 | ~90 ms |
+| **960 (default)** | **~20** | ~180 ms |
+| 1280 (crowd mode) | ~27–34 | ~240 ms |
+
+The stills in this README use crowd mode. Because display and analysis run on
+separate threads, raising it costs detection latency, never video smoothness.
+
 Headless check, no browser:
 
 ```bash
