@@ -1,0 +1,22 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Model weights (downloaded on first run — see README)
+models/*.pt
+
+# Runtime data: uploaded clips, transcode cache, logs, debug frames
+data/
+!data/.gitkeep
+
+# Vendored front-end libs (loaded from CDN by default)
+web/vendor/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local launchers and dev helpers
+*.bat
+scripts/

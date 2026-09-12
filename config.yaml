@@ -1,0 +1,28 @@
+video:
+  display_width: 960      # lado largo del frame enviado al navegador
+  det_imgsz: 640
+  det_conf: 0.3
+  flow_width: 320         # lado largo reducido para optical flow
+  jpeg_quality: 70
+  send_fps: 18            # frames/s del video en el dashboard (display desacoplado)
+  webcam_index: 0         # indice de la camara para el modo directo
+
+metrics:
+  rate_hz: 2
+  ema_alpha: 0.35
+  peak_z: 2.2
+  peak_min_gap_s: 10
+
+server:
+  host: 127.0.0.1
+  port: 8765
+
+model:
+  weights: models/yolov8n-pose.pt   # deteccion + esqueleto 17 puntos en una sola red
+
+dj:
+  simulate: true        # simulated DJ set (no licensed catalogue) -- see engine/dj.py
+  track_seconds: 14     # how long each simulated track plays before the next pick
+
+audio:
+  spl_offset: 108       # dBFS -> dB SPL estimate (a laptop mic is not calibrated)

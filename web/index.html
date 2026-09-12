@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>CrowdPulse — crowd intelligence for the dancefloor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/web/styles.css?v=25">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">CROWD<span>PULSE</span></div>
+  <span id="status" class="status">OFFLINE</span>
+  <div class="spacer"></div>
+  <button id="btn-event" class="btn primary" title="Start reading the floor">START EVENT</button>
+  <input type="file" id="file-input" accept="video/mp4,video/quicktime,video/x-matroska,video/webm,video/*" hidden>
+</header>
+
+<main>
+  <section class="stage">
+    <div class="stagetop">
+      <div id="frame-wrap">
+        <img id="frame" alt="">
+        <div id="placeholder">Load a video or open the camera to start</div>
+        <div id="tclock">0:00</div>
+        <canvas id="aiview" width="236" height="150" title="What the model sees"></canvas>
+      </div>
+    </div>
+    <div id="timeline"></div>
+  </section>
+
+  <aside class="rail">
+    <div class="panel">
+      <div class="panel-h">CROWD ENERGY</div>
+      <div class="energy-row">
+        <span class="energy-val" id="v-energy">--</span>
+        <span class="energy-max">/100</span>
+        <span class="energy-trend" id="v-trend"></span>
+      </div>
+      <div class="meter"><div class="fill" id="energy-fill"></div><div class="ticks"></div></div>
+    </div>
+
+    <div class="grid">
+      <div class="cell"><div class="cv" id="v-people">--</div><div class="cl">People</div></div>
+      <div class="cell"><div class="cv" id="v-moving">--</div><div class="cl">Moving</div></div>
+      <div class="cell"><div class="cv" id="v-bpm">--</div><div class="cl">BPM</div></div>
+      <div class="cell"><div class="cv" id="v-db">--</div><div class="cl">Level dB SPL</div></div>
+      <div class="cell hero"><div class="cv" id="v-groove">--</div><div class="cl">Groove sync</div></div>
+      <div class="cell"><div class="cv" id="v-flux">--</div><div class="cl">Floor flux /min</div></div>
+    </div>
+
+    <div class="panel deck">
+      <div class="panel-h">NOW PLAYING <span class="sim" title="No licensed catalogue: the music side is simulated. The crowd response driving it is measured for real.">SIMULATED</span></div>
+      <div class="track-title" id="np-title">--</div>
+      <div class="track-meta" id="np-meta">waiting for the set to start</div>
+      <div class="resp-row"><span>CROWD RESPONSE</span><span class="resp-val" id="np-resp">--</span></div>
+      <div class="meter thin"><div class="fill" id="resp-fill"></div></div>
+    </div>
+
+    <div class="panel next">
+      <div class="panel-h">NEXT UP <span class="sub">learned from this floor</span></div>
+      <div id="next-list" class="next-list"><div class="empty">Listening to how the crowd reacts...</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h">GENRE RESPONSE <span id="proc-fps" class="mini"></span></div>
+      <div id="genre-list"><div class="empty">No tracks scored yet</div></div>
+    </div>
+
+    <div id="statusline"></div>
+  </aside>
+</main>
+
+<script src="/web/vendor/echarts.min.js"></script>
+<script>if (!window.echarts) { document.write('<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"><\/script>'); }</script>
+<script src="/web/app.js?v=25"></script>
+</body>
+</html>
