@@ -19,4 +19,6 @@ Thumbs.db
 
 # Local launchers and dev helpers
 *.bat
-scripts/
+scripts/*
+# ...except the recommender demo, which the README tells people to run
+!scripts/sim_loop.py

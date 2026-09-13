@@ -28,7 +28,7 @@ def extract_audio_features(video_path, target_rate=10):
         import librosa
     except Exception:
         return None
-    wav = os.path.join(tempfile.gettempdir(), "crowdpulse_audio.wav")
+    wav = os.path.join(tempfile.gettempdir(), "kadenz_audio.wav")
     try:
         ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
         cmd = [ffmpeg, "-y", "-i", video_path, "-vn", "-ac", "1", "-ar", "22050", wav]
@@ -89,7 +89,7 @@ def recognize_file_segment(video_path, at_fraction=0.5, seconds=12):
         cap.release()
         duration = frames / fps if fps else 0
         start = max(0.0, duration * at_fraction - seconds / 2)
-        wav = os.path.join(tempfile.gettempdir(), "crowdpulse_reco.wav")
+        wav = os.path.join(tempfile.gettempdir(), "kadenz_reco.wav")
         ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
         subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-ss", str(start),
                         "-i", str(video_path), "-t", str(seconds),

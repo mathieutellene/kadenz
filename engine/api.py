@@ -27,7 +27,7 @@ UPLOADS = ROOT / "data" / "uploads"
 UPLOADS.mkdir(parents=True, exist_ok=True)
 VIDEO_EXT = {".mp4", ".mov", ".mkv", ".avi", ".webm", ".m4v"}
 
-app = FastAPI(title="CrowdPulse")
+app = FastAPI(title="Kadenz")
 app.mount("/web", StaticFiles(directory=ROOT / "web"), name="web")
 
 # Una unica sesion y un unico pump: la ULTIMA conexion WS adopta la sesion en

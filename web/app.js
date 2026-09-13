@@ -1,4 +1,4 @@
-/* CrowdPulse dashboard.
+/* Kadenz dashboard.
    Frames arrive as binary WebSocket messages (4-byte timestamp + JPEG, latest
    wins); everything else arrives as JSON. The colour ramp used for the energy
    meter and the AI view matches engine/annotate.py on purpose. */
@@ -162,6 +162,25 @@ function refreshChart(force) {
 }
 
 /* --------------------------------------------------------------- DJ panels */
+/* Light the stage of the loop the session is currently in. Purely a narrative
+   device: it keeps the diagram in the header tied to what is happening. */
+function setLoopStage(stage) {
+  document.querySelectorAll(".loopbar .ls").forEach((el) => {
+    el.classList.toggle("on", el.dataset.stage === stage);
+  });
+}
+
+function setFeature(id, v) {
+  const bar = $(`f-${id}`), val = $(`fv-${id}`);
+  if (v == null) { bar.style.width = "0%"; val.textContent = "--"; return; }
+  bar.style.width = `${Math.round(v * 100)}%`;
+  val.textContent = v.toFixed(2).slice(1);   // 0.92 -> .92
+}
+
+function trackLine(t) {
+  return `${t.title} — ${t.artist} <span class="bpm">${t.bpm} BPM${t.mixable === false ? " ⚠" : ""}</span>`;
+}
+
 function renderDJ(msg) {
   const now = msg.now;
   if (now) {
@@ -172,17 +191,48 @@ function renderDJ(msg) {
     $("np-resp").textContent = r == null ? "--" : Math.round(r);
     $("np-resp").style.color = r == null ? "" : energyColor(r);
     $("resp-fill").style.width = `${Math.max(0, Math.min(100, r || 0))}%`;
+    setFeature("energy", now.energy);
+    setFeature("dance", now.dance);
+    setFeature("valence", now.valence);
+    setLoopStage(msg.changed ? "deck" : "floor");
   }
-  const list = $("next-list");
+
+  /* ---- the two models, side by side -------------------------------------
+     The open-loop pick comes straight from audio-feature similarity plus a
+     popularity prior; the closed-loop pick is the same catalogue re-ranked by
+     measured crowd response. When they disagree, that gap IS the product. */
+  const openTop = (msg.open || [])[0];
+  if (openTop) {
+    $("open-title").innerHTML = trackLine(openTop);
+    $("open-why").textContent = openTop.reason;
+  }
+
   const next = msg.next || [];
-  list.innerHTML = next.length ? next.map((t, i) => `
-    <div class="next-item${i ? " alt" : ""}">
-      <div class="next-top">
-        <span class="next-title">${t.title} — ${t.artist}</span>
-        <span class="next-bpm">${t.bpm} BPM${t.mixable ? "" : " ⚠"}</span>
-      </div>
-      <div class="next-why">${t.reason}</div>
-    </div>`).join("") : '<div class="empty">Listening to how the crowd reacts...</div>';
+  if (next.length) {
+    $("next-title").innerHTML = trackLine(next[0]);
+    $("next-why").textContent = next[0].reason;
+    $("next-alts").innerHTML = next.slice(1, 3).map((t) => `
+      <div class="alt"><div class="at">${t.title}</div>
+        <div class="ab">${t.genre.toUpperCase()} · ${t.bpm}</div></div>`).join("");
+  }
+
+  const loop = msg.loop || {};
+  const vd = $("loop-verdict");
+  if (loop.agree === false) {
+    vd.className = "verdict diverge";
+    $("verdict-text").textContent = loop.note || "the crowd disagrees";
+  } else if (loop.agree === true) {
+    vd.className = "verdict agree";
+    $("verdict-text").textContent = loop.note || "both models agree";
+  } else {
+    vd.className = "verdict";
+    $("verdict-text").textContent = "the floor has not spoken yet";
+  }
+  // Scoped to the set so far, not to the pick shown above it: the verdict line
+  // is about the next track, this tally is about every decision already taken.
+  $("loop-rate").textContent = loop.compared
+    ? `set so far: ${loop.corrected}/${loop.compared} corrected`
+    : "";
 
   const gl = $("genre-list");
   const gs = msg.genres || [];
@@ -267,10 +317,15 @@ function handle(msg) {
       const simCells = msg.sim_audio === true;
       $("v-bpm").style.color = simCells ? "var(--warm)" : "";
       $("v-db").style.color = simCells ? "var(--warm)" : "";
-      if (simCells && !$("v-bpm").dataset.simmed) {
-        $("v-bpm").dataset.simmed = "1";
-        $("v-bpm").parentElement.querySelector(".cl").textContent = "BPM · sim";
-        $("v-db").parentElement.querySelector(".cl").textContent = "Level dB SPL · sim";
+      // The audio job finishes in the background, so a clip can start out
+      // simulated and become real mid-session. The label has to follow it BOTH
+      // ways -- leaving "· sim" on a real measurement is just as wrong.
+      if (simCells !== ($("v-bpm").dataset.simmed === "1")) {
+        $("v-bpm").dataset.simmed = simCells ? "1" : "0";
+        $("v-bpm").parentElement.querySelector(".cl").textContent =
+          simCells ? "BPM · sim" : "BPM";
+        $("v-db").parentElement.querySelector(".cl").textContent =
+          simCells ? "Level dB SPL · sim" : "Level dB SPL";
       }
       // Groove sync needs a real beat to correlate against; say so instead of faking it
       if (msg.groove == null) {
@@ -317,10 +372,19 @@ function startAnalysis(cmd) {
   $("np-meta").textContent = "waiting for the set to start";
   $("np-resp").textContent = "--";
   $("resp-fill").style.width = "0%";
-  $("next-list").innerHTML = '<div class="empty">Listening to how the crowd reacts...</div>';
+  ["energy", "dance", "valence"].forEach((k) => setFeature(k, null));
+  $("open-title").textContent = "--";
+  $("open-why").textContent = "cold start — nothing playing yet";
+  $("next-title").textContent = "--";
+  $("next-why").textContent = "Listening to how the crowd reacts…";
+  $("next-alts").innerHTML = "";
+  $("loop-rate").textContent = "";
+  $("loop-verdict").className = "verdict";
+  $("verdict-text").textContent = "the floor has not spoken yet";
+  setLoopStage("vis");
   $("genre-list").innerHTML = '<div class="empty">No tracks scored yet</div>';
   $("v-trend").textContent = "";
-  delete $("v-bpm").dataset.simmed;
+  $("v-bpm").dataset.simmed = "0";
   $("v-bpm").parentElement.querySelector(".cl").textContent = "BPM";
   $("v-db").parentElement.querySelector(".cl").textContent = "Level dB SPL";
   $("v-bpm").style.color = ""; $("v-db").style.color = "";

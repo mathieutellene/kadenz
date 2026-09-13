@@ -59,6 +59,9 @@ class Annotator:
     def draw(self, frame, tracks, mag=None, heat=False):
         out = frame.copy()
         s = max(out.shape[:2]) / 960.0
+        # Antialiasing is lovely and expensive. On a packed floor (30+ skeletons
+        # at 18 fps) it is what starves the display loop, so drop it there.
+        aa = cv2.LINE_AA if len(tracks or []) <= 12 else cv2.LINE_8
 
         if heat and mag is not None:
             norm = np.clip(mag / (np.percentile(mag, 97) + 1e-6), 0.0, 1.0)
@@ -74,8 +77,8 @@ class Annotator:
         layer = out.copy()
         for ti in tracks:
             color = energy_color(ti.get("e"))
-            self._corner_ticks(layer, ti, color, s)
-            self._skeleton(layer, ti.get("kpts"), ti.get("kconf"), color, s)
+            self._corner_ticks(layer, ti, color, s, aa)
+            self._skeleton(layer, ti.get("kpts"), ti.get("kconf"), color, s, aa)
         out = cv2.addWeighted(layer, OVERLAY_ALPHA, out, 1.0 - OVERLAY_ALPHA, 0)
 
         # Labels go on last, fully opaque, and only for the top movers.
@@ -86,17 +89,17 @@ class Annotator:
         return out
 
     # ------------------------------------------------------------------ parts
-    def _corner_ticks(self, img, ti, color, s):
+    def _corner_ticks(self, img, ti, color, s, aa=cv2.LINE_AA):
         """Four short ticks instead of a full box: marks the person, hides nothing."""
         x1, y1, x2, y2 = ti["x1"], ti["y1"], ti["x2"], ti["y2"]
         th = max(1, round(1.4 * s))
         ln = max(4, min(int(min(x2 - x1, y2 - y1) * 0.18), round(13 * s)))
         for cx, cy, dx, dy in ((x1, y1, 1, 1), (x2, y1, -1, 1),
                                (x1, y2, 1, -1), (x2, y2, -1, -1)):
-            cv2.line(img, (cx, cy), (cx + dx * ln, cy), color, th, cv2.LINE_AA)
-            cv2.line(img, (cx, cy), (cx, cy + dy * ln), color, th, cv2.LINE_AA)
+            cv2.line(img, (cx, cy), (cx + dx * ln, cy), color, th, aa)
+            cv2.line(img, (cx, cy), (cx, cy + dy * ln), color, th, aa)
 
-    def _skeleton(self, img, kpts, kconf, color, s):
+    def _skeleton(self, img, kpts, kconf, color, s, aa=cv2.LINE_AA):
         if kpts is None or kconf is None:
             return
         th = max(1, round(1.5 * s))
@@ -105,11 +108,11 @@ class Annotator:
                 cv2.line(img,
                          (int(kpts[a][0]), int(kpts[a][1])),
                          (int(kpts[b][0]), int(kpts[b][1])),
-                         color, th, cv2.LINE_AA)
+                         color, th, aa)
         r = max(1, round(1.8 * s))
         for j in range(17):
             if kconf[j] > KP_CONF:
-                cv2.circle(img, (int(kpts[j][0]), int(kpts[j][1])), r, TEXT, -1, cv2.LINE_AA)
+                cv2.circle(img, (int(kpts[j][0]), int(kpts[j][1])), r, TEXT, -1, aa)
 
     def _tag(self, img, ti, color, s):
         """Small energy tag for a notable dancer."""

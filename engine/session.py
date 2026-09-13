@@ -181,7 +181,10 @@ class AnalysisSession(threading.Thread):
             if 0 <= i < len(self.audio_db):
                 dbfs = float(self.audio_db[i])
         if dbfs is not None:
-            return round(max(40.0, min(120.0, dbfs + offset)), 1)
+            if dbfs < -60.0:
+                dbfs = None          # digital silence: fall through, do not clamp
+            else:
+                return round(max(40.0, min(120.0, dbfs + offset)), 1)
         cur = self.dj.current
         if cur is not None:
             # Simulated PA level: harder tracks push the room louder, and the
@@ -201,20 +204,35 @@ class AnalysisSession(threading.Thread):
         if cur is not None:
             resp = self.dj._mean(cur["samples"]) if cur["samples"] else None
             now = {k: cur[k] for k in
-                   ("title", "artist", "genre", "bpm", "key", "energy", "dance")}
+                   ("title", "artist", "genre", "bpm", "key", "energy",
+                    "dance", "valence")}
             now["elapsed"] = round(t - cur["start"], 1)
             now["response"] = None if resp is None else round(resp, 1)
         last = self.dj.history[-1] if self.dj.history else None
+        # Both rankings go out on every push -- the content-only open-loop
+        # baseline and the closed-loop pick -- so the UI can show them side by
+        # side instead of asking anyone to take our word for the difference.
+        # Ranked live, so the panel always proposes the NEXT track (whatever is
+        # on the deck is excluded from the candidates). The running divergence
+        # tally is a separate, stable statistic, incremented only in _dj_tick at
+        # the moment a decision is actually taken.
+        cmp_ = self.dj.loop_compare(3)
         self.emit({
             "type": "dj",
             "simulated": True,
             "changed": changed,
             "now": now,
-            "next": self.dj.recommend(3),
+            "next": cmp_["closed"],
+            "open": cmp_["open"],
+            "loop": {"agree": cmp_["agree"], "rank_shift": cmp_["rank_shift"],
+                     "divergence_pct": cmp_["divergence_pct"],
+                     "corrected": cmp_["corrected"], "compared": cmp_["compared"],
+                     "note": cmp_["note"]},
             "genres": self.dj.genre_scores(),
             "last": None if last is None else {
                 "title": last["title"], "genre": last["genre"],
-                "delta": None if last["delta"] is None else round(last["delta"], 1)},
+                "delta": None if last["delta"] is None else round(last["delta"], 1),
+                "open_pick": last.get("open_pick")},
         })
 
     def _dj_tick(self, t, energy):
@@ -232,9 +250,17 @@ class AnalysisSession(threading.Thread):
         if cur is None or (t - cur["start"]) >= span:
             if cur is not None:
                 self.dj.close_current(t)
-            pick = self.dj.recommend(1)
-            if pick:
-                self.dj.start_track(pick[0], t)
+            # One comparison per track change (not per refresh) so the running
+            # divergence rate counts decisions, not UI ticks.
+            cmp_ = self.dj.loop_compare(3, count=True)
+            if cmp_["closed"]:
+                op = cmp_["open"][0] if cmp_["open"] else None
+                self.dj.start_track(
+                    cmp_["closed"][0], t,
+                    open_pick=None if op is None else
+                    {"title": op["title"], "artist": op["artist"],
+                     "genre": op["genre"], "bpm": op["bpm"],
+                     "reason": op["reason"]})
             self._emit_dj(t, changed=True)
             self._dj_last_push = t
         elif t - getattr(self, "_dj_last_push", -99) >= 2.0:

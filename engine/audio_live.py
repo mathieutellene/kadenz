@@ -259,7 +259,7 @@ class LiveAudio(threading.Thread):
             return
         print(f"[reco] intento con {source}: {len(y)/cap.sr:.1f}s "
               f"rms={float(np.sqrt(np.mean(y**2))):.4f}", flush=True)
-        wav = os.path.join(tempfile.gettempdir(), "crowdpulse_live.wav")
+        wav = os.path.join(tempfile.gettempdir(), "kadenz_live.wav")
         try:
             import soundfile as sf
             sf.write(wav, y, cap.sr, subtype="PCM_16")  # Shazam espera PCM16, no float
