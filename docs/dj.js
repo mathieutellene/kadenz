@@ -1,11 +1,14 @@
 /* Closed-loop DJ intelligence, browser edition.
  *
- * A port of engine/dj.py. The scoring, the mixability cliff, the exploration
- * term and the divergence bookkeeping are all identical, because the point of
- * this page is that a visitor can reproduce the README's claim on their own
- * kitchen floor. The catalogue itself is NOT duplicated here -- it comes from
- * catalogue.js, which is generated from the Python (see
- * scripts/build_catalogue.py) so the two can never drift.
+ * A port of engine/dj.py. The scoring, the mixability cliff and the divergence
+ * bookkeeping are identical, because the point of this page is that a visitor
+ * can reproduce the README's claim on their own kitchen floor. The catalogue
+ * itself is NOT duplicated here -- it comes from catalogue.js, which is
+ * generated from the Python (see scripts/build_catalogue.py) so the two can
+ * never drift.
+ *
+ * The one thing that is NOT bit-identical is the exploration draw; see the
+ * note on mulberry32 below.
  */
 import { CATALOGUE, MIXABLE_BPM_PCT, SIM_W, BPM_LO, BPM_HI } from "./catalogue.js";
 
@@ -23,8 +26,12 @@ export function featureDistance(a, b) {
 const mean = (xs) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
 const pct = (x) => `${Math.round(x * 100)}%`;
 
-/* Deterministic PRNG so a reload replays the same exploration sequence —
-   makes the demo reproducible when someone is comparing it to the README. */
+/* Deterministic PRNG so a reload replays the same exploration sequence. Note it
+   is NOT the same sequence Python draws: mulberry32 and Mersenne Twister cannot
+   be made to agree, so this page explores the catalogue in a different order
+   than scripts/sim_loop.py. It reaches the same conclusions — same divergence
+   count, same learned genre table — by a different route, which is what a
+   bandit is supposed to do. */
 function mulberry32(seed) {
   return function () {
     seed |= 0; seed = (seed + 0x6d2b79f5) | 0;

@@ -261,9 +261,16 @@ would unlock WASM threads:
 Same quality/speed dial as `det_imgsz`, same shape of trade-off, exposed as a
 button in the top bar. With WebGPU available it is far faster than either.
 
-The port is not taken on trust: driven by the same synthetic floor,
-`docs/dj.js` reproduces `scripts/sim_loop.py` exactly — 10 of 10 picks
-corrected, Tech House learned at 87.
+The port is not taken on trust. Driven by the same synthetic floor, `docs/dj.js`
+reaches the same conclusions as `scripts/sim_loop.py`: the open loop asks for
+*Blinding Lights* in all ten rounds, **10 of 10** picks are corrected, and the
+learned genre table matches value for value — Tech House 88, French House 76,
+Deep House 62, Big Room 48.
+
+What does *not* match is which tracks get explored on the way there, because the
+two languages cannot share a PRNG sequence and the exploration term draws from
+it. That is the honest result and it is also the point of a bandit: the route
+varies, the conclusion does not.
 
 ---
 
