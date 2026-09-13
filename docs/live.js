@@ -287,6 +287,15 @@ function fmt(s) { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}:
 /* --------------------------------------------------------------- the loop */
 function djTick(t) {
   const dj = state.dj;
+  // With nobody in frame there is no crowd response to measure, and feeding the
+  // recommender a zero would be exactly the failure the desktop build refuses
+  // for silent audio: a fabricated reward dressed up as a measurement. Hold the
+  // set instead -- the loop resumes the moment someone is detected again.
+  if (!state.tracks.length) {
+    $("empty-hint").hidden = false;
+    return;
+  }
+  $("empty-hint").hidden = true;
   if (state.energy != null) dj.sample(state.energy);
   const cur = dj.current;
   if (!cur || t - cur.start >= TRACK_SECONDS) {

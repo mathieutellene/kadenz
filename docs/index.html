@@ -5,7 +5,7 @@
   <title>Kadenz live — close the loop with your own camera</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Music recommenders are open loop. Kadenz closes it with computer vision — running entirely in your browser, on your own camera.">
-  <link rel="stylesheet" href="live.css?v=4">
+  <link rel="stylesheet" href="live.css?v=5">
 </head>
 <body>
 
@@ -85,6 +85,7 @@
       <video id="cam" playsinline muted></video>
       <canvas id="overlay"></canvas>
       <div id="clock">0:00</div>
+      <div id="empty-hint" hidden>Nobody in frame — the loop is paused.<br>Step back so your whole body is visible.</div>
     </div>
     <canvas id="chart"></canvas>
   </section>
@@ -159,6 +160,6 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
-<script type="module" src="live.js?v=4"></script>
+<script type="module" src="live.js?v=5"></script>
 </body>
 </html>

@@ -414,3 +414,10 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 384px; height: calc(
   .loopbar { display: none; }
   .intro h1 { font-size: 24px; }
 }
+
+#empty-hint {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+  font-size: 13px; line-height: 1.6; color: var(--muted);
+  background: rgba(8, 8, 11, .55); pointer-events: none;
+}
