@@ -7,7 +7,7 @@
 
 ![Kadenz overlay](docs/media/demo.gif)
 
-<sub>Rooftop club. The front rows are tracked; the packed crowd behind them is not — at that distance people are a few pixels tall and a person detector cannot see them at all (see <a href="#limitations">Limitations</a>).</sub>
+<sub>Night stage. Nearly everyone in frame is tracked — the dancers run amber, the people sitting on the steps in the foreground stay cool. Nothing is labelled by hand: the colour <em>is</em> the measured motion.</sub>
 
 ### ▶ [Try it on your own camera — no install](https://mathieutellene.github.io/kadenz/)
 
@@ -139,9 +139,11 @@ ramp: **cyan = still → amber → hot pink = going off.**
 
 ![Per-person overlay](docs/media/overlay.jpg)
 
-*Night stage. The people sitting on the steps in the foreground come out cold;
-the ones dancing come out warm. Nobody labelled that — the split falls out of
-the motion measurement alone, and the colour ramp is doing all the work.*
+*Rooftop club, and the honest frame: the front rows are tracked, the packed
+crowd behind them is not. At that distance people are a few pixels tall and a
+person detector cannot see them at all (see [Limitations](#limitations)). Among
+those it does resolve, the cyan-to-orange spread is the measured motion — who is
+dancing and who is standing at the rail.*
 
 ---
 
@@ -326,8 +328,9 @@ AGPL-3.0. Swapping the detector for an Apache-2.0 model (RT-DETR, D-FINE) would
 allow a permissive licence.
 
 Demo footage: [Pixabay](https://pixabay.com/) content licence — one scene per
-visual: rooftop club (the animation at the top), night stage (the per-person
-still), open-air concert (the dashboard).
+visual: night stage (the animation at the top), rooftop club (the per-person
+still), open-air concert (the dashboard, and the only clip with real audio,
+which is why its BPM, level and groove sync are measured rather than blank).
 
 Track titles and artists in `engine/dj.py` are real releases, used as
 recognisable labels. Their audio-feature values are not: see *What is real and

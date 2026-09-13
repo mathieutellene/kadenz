@@ -141,8 +141,8 @@ export function postprocess(out, lb, srcW, srcH) {
    occlusion that matters on a packed floor and much less on a webcam, so this
    trades it for a pipeline that fits in a frame budget. */
 export class Tracker {
-  constructor({ iouMin = 0.3, maxAge = 12, minHits = 3 } = {}) {
-    Object.assign(this, { iouMin, maxAge, minHits });
+  constructor({ iouMin = 0.3, maxAge = 12, minHits = 3, holdAge = 2 } = {}) {
+    Object.assign(this, { iouMin, maxAge, minHits, holdAge });
     this.tracks = [];
     this.nextId = 1;
     this.entries = 0;
@@ -192,7 +192,10 @@ export class Tracker {
       alive.push(t);
     }
     this.tracks = alive;
-    return this.tracks.filter((t) => t.hits >= this.minHits && t.age === 0);
+    // age <= holdAge, not age === 0: a confirmed person missed for a frame or
+    // two would otherwise blink out of the overlay entirely. Slightly stale
+    // geometry beats a strobing skeleton.
+    return this.tracks.filter((t) => t.hits >= this.minHits && t.age <= this.holdAge);
   }
 }
 

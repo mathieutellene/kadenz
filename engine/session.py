@@ -32,6 +32,10 @@ from .prep import ensure_analyzable
 from .sources import VideoSource
 
 
+# How long the overlay keeps the last known skeletons through a detection gap.
+TRACK_HOLD_SECONDS = 1.0
+
+
 class AnalysisSession(threading.Thread):
     def __init__(self, source_spec, cfg, out_queue, name="video"):
         super().__init__(daemon=True)
@@ -46,6 +50,7 @@ class AnalysisSession(threading.Thread):
         # Estado compartido display <-> analisis (swaps de referencia, atomicos por el GIL)
         self._for_analysis = None  # (t, display_frame), most recent
         self._track_state = []     # per-person dicts (box, energy, kpts...)
+        self._track_state_t = -99.0   # video time the overlay was last refreshed
         self._latest_mag = None
         # (crowd, per_track, occupancy) SIEMPRE del mismo analisis — evita que
         # participacion se calcule mezclando dos fotogramas distintos (>100%)
@@ -410,7 +415,18 @@ class AnalysisSession(threading.Thread):
                             "kconf": kconf_all[i] if kconf_all is not None else None,
                         })
                     personal.prune(active_ids)
-                self._track_state = track_info
+                # Hold the last overlay through a brief detection gap. The
+                # display thread draws whatever is in _track_state at 18 fps, so
+                # wiping it on a single empty pass makes every skeleton strobe
+                # off and back on -- and on dark, backlit or crowded footage
+                # empty passes are common. Stale geometry for a fraction of a
+                # second is far less wrong than a flashing overlay; past the
+                # hold, the floor really is empty and it clears.
+                if track_info:
+                    self._track_state = track_info
+                    self._track_state_t = t
+                elif t - self._track_state_t > TRACK_HOLD_SECONDS:
+                    self._track_state = []
                 self._vision = (crowd, per_track, int(len(det)))
                 if crowd is not None:
                     self.groove.add_motion(t, crowd)
