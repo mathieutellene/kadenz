@@ -10,14 +10,14 @@
  * analyse() runs its own async loop at whatever rate inference manages. The
  * video is never blocked on a forward pass.
  */
-import { DJEngine } from "./dj.js?v=22";
+import { DJEngine } from "./dj.js?v=23";
 import {
   EDGES, MODELS, Motion, Normaliser, Tracker,
   loadModel, makeLetterbox, postprocess, preprocess,
-} from "./vision.js?v=22";
-import { AudioAnalyser, grooveSync } from "./audio.js?v=22";
-import { Backdrop } from "./backdrop.js?v=22";
-import { buildReport, drawTimeline } from "./report.js?v=22";
+} from "./vision.js?v=23";
+import { AudioAnalyser, grooveSync } from "./audio.js?v=23";
+import { Backdrop } from "./backdrop.js?v=23";
+import { buildReport, drawTimeline } from "./report.js?v=23";
 
 const TRACK_SECONDS = 14;        // matches config.yaml dj.track_seconds
 const METRIC_HZ = 4;

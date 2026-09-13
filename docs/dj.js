@@ -10,7 +10,7 @@
  * The one thing that is NOT bit-identical is the exploration draw; see the
  * note on mulberry32 below.
  */
-import { CATALOGUE, MIXABLE_BPM_PCT, SIM_W, BPM_LO, BPM_HI } from "./catalogue.js?v=22";
+import { CATALOGUE, MIXABLE_BPM_PCT, SIM_W, BPM_LO, BPM_HI } from "./catalogue.js?v=23";
 
 const tempoNorm = (bpm) => (bpm - BPM_LO) / (BPM_HI - BPM_LO);
 
@@ -62,14 +62,25 @@ export class DJEngine {
     return scored.length ? mean(scored) : null;
   }
 
+  /* The track "what next?" is being asked relative to. A decision is taken the
+     instant the previous one ends, so `current` is null at exactly the moment
+     it matters most; falling back to the track that just finished is both what
+     a real seed-track query does and what the DJ is actually mixing out of.
+     Without it the open loop degenerates to a popularity list and the
+     mixability constraint silently never fires. */
+  _reference() {
+    return this.current || this.history[this.history.length - 1] || null;
+  }
+
   _candidates() {
-    return CATALOGUE.filter((t) => !(this.current && t.title === this.current.title));
+    const ref = this._reference();
+    return CATALOGUE.filter((t) => !(ref && t.title === ref.title));
   }
 
   _mixable(tr) {
-    const cur = this.current?.bpm;
-    if (!cur) return [true, 0];
-    const drift = Math.abs(tr.bpm - cur) / cur;
+    const ref = this._reference()?.bpm;
+    if (!ref) return [true, 0];
+    const drift = Math.abs(tr.bpm - ref) / ref;
     return [drift <= MIXABLE_BPM_PCT, drift];
   }
 
@@ -109,7 +120,7 @@ export class DJEngine {
 
   /* ---- OPEN LOOP: content only, never sees the room -------------------- */
   recommendOpen(n = 3) {
-    const cur = this.current;
+    const cur = this._reference();
     const out = this._candidates().map((tr) => {
       let score;
       if (cur) {

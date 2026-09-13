@@ -72,41 +72,44 @@ want pop (`scripts/sim_loop.py`):
 #  CLOSED LOOP PLAYED                              resp      Δ   OPEN LOOP WANTED INSTEAD
 ───────────────────────────────────────────────────────────────────────────────────────────────────
  1  Don't You Know — Kungs                            62           Blinding Lights ◆
- 2  Losing It — Fisher                                86    +39%   Blinding Lights ◆
- 3  Stop It — Fisher                                  85    +16%   Blinding Lights ◆
- 4  Gecko (Overdrive) — Oliver Heldens                70    -10%   Blinding Lights ◆
- 5  WTF — HUGEL                                       88    +16%   Blinding Lights ◆
- 6  Morenita — HUGEL                                  88    +12%   Blinding Lights ◆
- 7  I Follow Rivers (The Magician Remix) — Lykke Li   42    -48%   Blinding Lights ◆
- 8  I'm Good (Blue) — David Guetta & Bebe Rexha       48    -36%   Blinding Lights ◆
- 9  One More Time — Daft Punk                         76     +7%   Blinding Lights ◆
-10  Around the World — Daft Punk                      76     +6%   Blinding Lights ◆
+ 2  Losing It — Fisher                                86    +39%   Around the World ◆
+ 3  Stop It — Fisher                                  85    +16%   I'm Good (Blue) ◆
+ 4  Gecko (Overdrive) — Oliver Heldens                70    -10%   I'm Good (Blue) ◆
+ 5  Morenita — HUGEL                                  88    +16%   I'm Good (Blue) ◆
+ 6  WTF — HUGEL                                       88    +12%   This Girl ◆
+ 7  Around the World — Daft Punk                      74     -7%   This Girl ◆
+ 8  Feel So Close — Calvin Harris                     48    -40%   This Girl ◆
+ 9  I Follow Rivers (The Magician Remix) — Lykke Li   44    -42%   Summer ◆
+10  One More Time — Daft Punk                         76     +6%   This Girl ◆
 ───────────────────────────────────────────────────────────────────────────────────────────────────
 divergence: 100% — 10 of 10 picks corrected by the crowd
-final call: French House over Synthwave (#12 on audio features alone)
+final call: French House over Deep House (#6 on audio features alone)
 ```
 
 Two things to notice, and they are the whole argument:
 
-1. **The open loop asks for *Blinding Lights* ten times out of ten.** It carries
-   the highest popularity in the catalogue, so it wins every round — and at
-   171 BPM it cannot be beatmatched from anything else in the set, which the
-   content model has no way to know. That is not a strawman: it is popularity
-   bias, the known failure mode of content-plus-popularity recommenders,
-   reproduced faithfully.
+1. **The open loop is not a strawman — it is competent.** Every pick in that
+   right-hand column genuinely sounds like what just finished: *Around the
+   World* out of *Losing It*, *This Girl* out of a run of house. It is doing its
+   job well. It is still overruled on every single decision, because sounding
+   similar and moving a room are different questions.
+   The one exception is round 1, where nothing has played yet and a seed-track
+   model has nothing to go on but popularity: it reaches for *Blinding Lights*,
+   the biggest track in the catalogue and, at 171 BPM, one that cannot be
+   beatmatched into anything else here. Cold start is where popularity bias
+   shows up naked.
 2. **The closed loop explores, then commits.** It pays for information early and
-   late — *I Follow Rivers* at −48%, *I'm Good (Blue)* at −36% — and in between
-   finds what this room is actually here for: Fisher and HUGEL at 86–88. The
-   genre it settles on ranks **#12 of 17** on audio features alone. No
-   open-loop model would ever reach it.
+   late — *I Follow Rivers* at −42%, *Feel So Close* at −40% — and in between
+   finds what this room is actually here for: Fisher and HUGEL at 85–88. No
+   open-loop model would reach that by similarity alone.
 
 The genre table it learned, from nothing, in ten tracks — note that it also
 learned what *not* to play, which is the half a recommender never finds out:
 
 ```
-  Tech House        86.7     French House      75.7
+  Tech House        86.7     French House      74.8
   Future House      70.1     Deep House        61.6
-  Big Room          47.6     Indie Dance       41.8
+  Big Room          47.6     Indie Dance       43.8
 ```
 
 ---
@@ -278,15 +281,17 @@ Every figure there is read back from measurements already taken — a run too
 short to support a claim says so instead of showing a confident zero.
 
 The port is not taken on trust. Driven by the same synthetic floor, `docs/dj.js`
-reaches the same conclusions as `scripts/sim_loop.py`: the open loop asks for
-*Blinding Lights* in all ten rounds, **10 of 10** picks are corrected, and the
-learned genre table matches value for value — Tech House 88, French House 76,
-Deep House 62, Big Room 48.
+reaches the same conclusion as `scripts/sim_loop.py`: the crowd overrules the
+feature match on nearly every decision — **10 of 10** in Python, **9 of 10** in
+the browser — and every genre both of them sampled scores identically, to the
+point: Tech House 88, French House 76, Future House 70, Big Room 48, Indie
+Dance 44.
 
-What does *not* match is which tracks get explored on the way there, because the
-two languages cannot share a PRNG sequence and the exploration term draws from
-it. That is the honest result and it is also the point of a bandit: the route
-varies, the conclusion does not.
+What does *not* match is which tracks get explored on the way there. The two
+languages cannot share a PRNG sequence and the exploration term draws from it,
+so the browser reaches a slightly different set of tracks — which is also why
+one of its ten rounds happened to land on agreement. That is the honest result
+and it is also the point of a bandit: the route varies, the conclusion does not.
 
 ---
 

@@ -157,17 +157,30 @@ class DJEngine:
         scored = [h["response"] for h in self.history if h["response"] is not None]
         return self._mean(scored) if scored else None
 
+    def _reference(self):
+        """The track "what next?" is being asked relative to.
+
+        A decision is taken the instant the previous track ends, so `current` is
+        None at exactly the moment it matters most. Falling back to the track
+        that just finished is both what a real seed-track query does and what
+        the DJ is actually mixing out of -- without it the open loop degenerates
+        to a popularity list and the mixability constraint silently never fires.
+        """
+        return self.current or (self.history[-1] if self.history else None)
+
     def _candidates(self):
-        """Everything playable right now: the catalogue minus what is spinning."""
+        """Everything playable right now: the catalogue minus the reference."""
+        ref = self._reference()
         return [tr for tr in CATALOGUE
-                if not (self.current and tr["title"] == self.current["title"])]
+                if not (ref and tr["title"] == ref["title"])]
 
     def _mixable(self, tr):
-        """Can a DJ beatmatch this from what is currently playing?"""
-        cur_bpm = self.current["bpm"] if self.current else None
-        if not cur_bpm:
+        """Can a DJ beatmatch this out of the track it follows?"""
+        ref = self._reference()
+        ref_bpm = ref["bpm"] if ref else None
+        if not ref_bpm:
             return True, 0.0
-        drift = abs(tr["bpm"] - cur_bpm) / cur_bpm
+        drift = abs(tr["bpm"] - ref_bpm) / ref_bpm
         return drift <= MIXABLE_BPM_PCT, drift
 
     # ------------------------------------------------------------------ state
@@ -208,12 +221,12 @@ class DJEngine:
     def recommend_open(self, n=3):
         """Content-only ranking: what a recommender that cannot see the room picks.
 
-        Pure audio-feature similarity to the track playing, plus a popularity
+        Pure audio-feature similarity to the reference track, plus a popularity
         prior -- the standard seed-track approach. No crowd signal enters here;
-        that is the entire point. With nothing playing yet it falls back to
-        popularity, exactly like a cold-start recommendation.
+        that is the entire point. Only at the very start, with nothing played at
+        all, does it fall back to popularity -- exactly like a cold start.
         """
-        cur = self.current
+        cur = self._reference()
         out = []
         for tr in self._candidates():
             if cur is not None:
