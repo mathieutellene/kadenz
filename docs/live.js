@@ -16,6 +16,7 @@ import {
   loadModel, makeLetterbox, postprocess, preprocess,
 } from "./vision.js";
 import { AudioAnalyser, grooveSync } from "./audio.js";
+import { Backdrop } from "./backdrop.js";
 
 const TRACK_SECONDS = 14;        // matches config.yaml dj.track_seconds
 const METRIC_HZ = 4;
@@ -94,6 +95,10 @@ async function boot() {
   state.t0 = performance.now() / 1000;
   state.running = true;
 
+  // The backdrop is decoration; inference is not. Stop it before the first
+  // forward pass rather than leaving it competing for the same frame budget.
+  backdrop?.stop();
+  document.body.classList.add("running");
   $("intro").hidden = true;
   $("stage").hidden = false;
   setStatus("LIVE", "live");
@@ -429,7 +434,9 @@ function stop() {
   setStatus("STOPPED");
   $("btn-stop").hidden = true;
   $("btn-size").hidden = true;
+  document.body.classList.remove("running");
   $("intro").hidden = false;
+  backdrop?.start();
   $("btn-start").disabled = false;
   $("btn-start").textContent = "START AGAIN";
 }
@@ -443,6 +450,9 @@ $("btn-start").addEventListener("click", () => {
 });
 $("btn-stop").addEventListener("click", stop);
 $("btn-size").addEventListener("click", () => setSize(state.size === 320 ? 640 : 320));
+
+const backdrop = new Backdrop($("bg"));
+backdrop.start();
 
 if (!navigator.mediaDevices?.getUserMedia) {
   fail("This browser has no camera API. Chrome, Edge, Firefox or Safari on a desktop all work.");

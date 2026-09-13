@@ -5,7 +5,7 @@
   <title>Kadenz live — close the loop with your own camera</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Music recommenders are open loop. Kadenz closes it with computer vision — running entirely in your browser, on your own camera.">
-  <link rel="stylesheet" href="live.css?v=9">
+  <link rel="stylesheet" href="live.css?v=15">
 </head>
 <body>
 
@@ -33,47 +33,68 @@
 
 <!-- ------------------------------------------------------------- landing -->
 <section id="intro" class="intro">
+  <!-- Background is three layers: two slow CSS glows, an animated energy
+       ribbon on this canvas, and a vignette. The ribbon is an abstract
+       visualisation motif, deliberately NOT a fake skeleton overlay -- the page
+       shows real ones the moment you press the button. -->
+  <canvas id="bg" aria-hidden="true"></canvas>
+
   <div class="intro-inner">
-    <h1>A recommender never finds out whether the floor emptied.</h1>
+    <p class="eyebrow"><i class="dot"></i>Closed-loop music recommendation</p>
+
+    <h1>A recommender never finds out<br class="wide">whether the floor emptied.</h1>
+
     <p class="lede">
-      Engines like <svg class="sp big"><use href="#spotify"/></svg> <strong>Spotify's</strong>
-      answer one question extremely well — <em>given this track, what sounds like it?</em> —
-      from audio features and what millions of other listeners did next. But they are
-      <strong>open loop</strong>. They know what was played. They never learn how the room reacted.
+      Engines like <svg class="sp big"><use href="#spotify"/></svg><strong>Spotify's</strong>
+      answer one question extremely well — <em>given this track, what sounds like it?</em>
+      They cannot answer the one that matters in a room: <strong>did anybody move?</strong>
     </p>
     <p class="lede">
-      <strong>Kadenz closes that loop with a camera.</strong> Point it at people moving and it
-      measures the response, then re-ranks the same catalogue an open-loop model ranks blind.
-      Both run side by side below, so you can watch them disagree.
+      Kadenz closes that loop with a camera. It measures the response and re-ranks
+      the same catalogue an open-loop model ranks blind — both running side by side,
+      so you can watch them disagree.
     </p>
 
-    <button id="btn-start" class="btn primary big">START — USE MY CAMERA</button>
+    <div class="cta-row">
+      <button id="btn-start" class="btn primary big">Use my camera</button>
+      <a class="ghost" href="https://github.com/mathieutellene/kadenz">Read the source</a>
+    </div>
     <p id="intro-error" class="err" hidden></p>
 
-    <div class="privacy">
-      <strong>This runs entirely in your browser.</strong> The pose model is downloaded once
-      (~13&nbsp;MB) and every frame is measured and discarded on your own machine. There is no
-      server in this build: no video, no audio and no measurement is uploaded anywhere.
-      <a href="https://github.com/mathieutellene/kadenz/blob/main/docs/live.js">Read the code</a>
-      — it is the page you are on.
-    </div>
+    <ol class="loopstrip" aria-label="How the loop runs">
+      <li><span class="ls-n">01</span><span class="ls-t">Catalogue</span><span class="ls-d">audio features</span></li>
+      <li><span class="ls-n">02</span><span class="ls-t">Deck</span><span class="ls-d">a track plays</span></li>
+      <li><span class="ls-n">03</span><span class="ls-t">Vision</span><span class="ls-d">pose + motion</span></li>
+      <li class="ls-back"><span class="ls-n">04</span><span class="ls-t">Response</span><span class="ls-d">re-ranks 01</span></li>
+    </ol>
+
+    <p class="privacy">
+      <strong>Runs entirely in your browser.</strong> The pose model downloads once
+      (~13&nbsp;MB) and every frame is measured and discarded on your own machine. No
+      server, no upload — <a href="https://github.com/mathieutellene/kadenz/blob/main/docs/live.js">the
+      code is the page you are on</a>.
+    </p>
 
     <details class="honest">
-      <summary>What this browser demo does and does not do</summary>
-      <table>
-        <tr><th>Person detection, pose, tracking</th>
-            <td><strong>Real.</strong> The same YOLOv8-pose weights as the desktop app, exported to ONNX</td></tr>
-        <tr><th>Crowd energy, per-person energy, floor flux</th>
-            <td><strong>Real</strong>, but measured by frame differencing rather than the desktop's dense optical flow — coarser, and it is what drives the recommender here</td></tr>
-        <tr><th>Both recommenders</th>
-            <td><strong>Real code.</strong> A port of <code>engine/dj.py</code>; the catalogue is generated from the Python so the two cannot drift</td></tr>
-        <tr><th>BPM, groove sync, level</th>
-            <td><strong>Real when you allow the microphone</strong>, from spectral flux rather than librosa. Denied or silent, they stay blank — never invented</td></tr>
-        <tr><th>The catalogue itself</th>
-            <td><strong>Real releases</strong>, used as recognisable labels — but their tempo, key and 0–1 feature values are estimates assigned by hand, not retrieved from Spotify or anywhere else</td></tr>
-      </table>
+      <summary>What this demo does, and what it doesn't</summary>
+      <dl>
+        <dt>Detection, pose, tracking</dt>
+        <dd><b>Real.</b> The same YOLOv8-pose weights as the desktop app, exported to ONNX</dd>
+
+        <dt>Crowd energy, per-person energy, flux</dt>
+        <dd><b>Real</b>, from frame differencing rather than the desktop's dense optical flow — coarser, and it is what drives the recommender here</dd>
+
+        <dt>Both recommenders</dt>
+        <dd><b>Real code.</b> A port of <code>engine/dj.py</code>; the catalogue is generated from the Python so the two cannot drift</dd>
+
+        <dt>BPM, groove sync, level</dt>
+        <dd><b>Real with the microphone</b>, from spectral flux rather than librosa. Denied or silent, they stay blank — never invented</dd>
+
+        <dt>The tracks</dt>
+        <dd><b>Real releases</b> used as recognisable labels — but their tempo, key and 0–1 feature values are estimates assigned by hand, not retrieved from Spotify or anywhere else</dd>
+      </dl>
       <p>A webcam sees one room, not a dancefloor. Expect one or two people and a
-      modest energy range — the crowd numbers in the README come from real venue footage.</p>
+      modest energy range — the crowd numbers in the README come from venue footage.</p>
     </details>
   </div>
 </section>
@@ -160,6 +181,6 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
-<script type="module" src="live.js?v=9"></script>
+<script type="module" src="live.js?v=15"></script>
 </body>
 </html>
