@@ -1,7 +1,8 @@
 """Open loop vs closed loop, on the same catalogue.
 
-Runs a ten-track set against a synthetic floor with a definite taste, and prints
-what each model wanted to play. No camera, no video, no model weights -- this
+Runs a ten-track set against a synthetic floor with a definite taste -- a room
+that wants tech house and does not want pop -- and prints what each model
+wanted to play. No camera, no video, no model weights -- this
 exercises `engine/dj.py` alone, so the recommendation argument can be checked in
 two seconds:
 
@@ -22,9 +23,9 @@ from engine.dj import DJEngine   # noqa: E402
 
 # How this fictional floor reacts, as mean crowd energy 0-100 per genre. In the
 # real system this number is not invented: it is measured by optical flow.
-FLOOR = {"Peak Techno": 88, "Breakbeat": 74, "Afro House": 66,
-         "Melodic Techno": 55, "Disco House": 48, "Deep House": 44,
-         "Ambient House": 23}
+FLOOR = {"Tech House": 88, "French House": 76, "Future House": 70,
+         "Deep House": 62, "Big Room": 48, "Indie Dance": 44,
+         "Synth Pop": 28, "Synthwave": 22}
 TRACKS = 10
 SPREAD = 6.0      # how noisy a single track's response is
 
@@ -34,9 +35,9 @@ def main(seed=7, floor_seed=3):
     rng = random.Random(floor_seed)
     t = 0.0
 
-    print(" #  PLAYING                  resp      Δ   "
-          "OPEN LOOP WANTS   CLOSED LOOP PICKS")
-    print("─" * 78)
+    print(" #  CLOSED LOOP PLAYED                              resp      Δ   "
+          "OPEN LOOP WANTED INSTEAD")
+    print("─" * 99)
 
     for i in range(TRACKS):
         cmp_ = dj.loop_compare(1, count=True)
@@ -51,11 +52,12 @@ def main(seed=7, floor_seed=3):
 
         delta = "" if done["delta"] is None else "{:+.0f}%".format(done["delta"])
         mark = "" if cmp_["agree"] else "◆"
-        print("{:>2}  {:<24} {:>4.0f}  {:>6}   {:<17} {:<15} {}".format(
-            i + 1, closed["title"][:24], done["response"], delta,
-            openl["title"][:17], closed["title"][:15], mark))
+        played = "{} — {}".format(closed["title"], closed["artist"])
+        wanted = openl["title"] if cmp_["agree"] else "{} {}".format(openl["title"], mark)
+        print("{:>2}  {:<47} {:>4.0f}  {:>6}   {}".format(
+            i + 1, played[:47], done["response"], delta, wanted))
 
-    print("─" * 78)
+    print("─" * 99)
     fin = dj.loop_compare(3)
     print("divergence: {}% — {} of {} picks corrected by the crowd".format(
         fin["divergence_pct"], fin["corrected"], fin["compared"]))

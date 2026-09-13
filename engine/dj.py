@@ -31,67 +31,81 @@ Both rankings are computed here, side by side, on every tick:
 The interesting number is not either pick on its own -- it is how often they
 **disagree**, and who was right. That divergence is the product.
 
-WHAT IS SIMULATED
------------------
-The catalogue below is SYNTHETIC: fictional tracks carrying realistic audio
-features on the standard streaming-API scales. It exists so the recommender can
-be demonstrated without a licensed catalogue. Swap `CATALOGUE` for a real
-provider's response and none of the logic changes. The *crowd response driving
-the loop is measured for real*; only the music metadata is stand-in, and it is
-flagged as such everywhere it surfaces.
+WHAT IS MEASURED AND WHAT IS NOT
+--------------------------------
+The tracks in `CATALOGUE` are real and recognisable, but their audio-feature
+values are NOT: tempo and key are nominal, and energy / danceability / valence /
+popularity were assigned by hand, by ear, on the 0-1 scales a streaming
+catalogue API uses. They are not retrieved from Spotify or anywhere else. They
+exist so the recommender has a realistically-shaped feature space to rank, and
+they are flagged as estimates everywhere they surface.
+
+The half that IS measured is the half that matters: the crowd response driving
+the loop comes from the vision pipeline, frame by frame, off real footage.
 """
 import random
 from collections import defaultdict
 
-# --- Synthetic catalogue -----------------------------------------------------
-# Feature names and scales mirror the standard audio-feature schema used by
-# streaming catalogue APIs: energy / danceability / valence in 0-1, tempo in
-# BPM, musical key, plus a popularity prior in 0-1. `pop` is what drives an
-# open-loop recommender towards the safe, globally-liked pick -- and it is
-# exactly what a specific room at 2am does not care about.
+# --- Catalogue ---------------------------------------------------------------
+# Real, recognisable floor-fillers, because a DJ reading a recommendation needs
+# to know instantly whether the engine is talking sense -- "Peak Techno 134" is
+# an abstraction, "Fisher - Losing It" is a decision.
+#
+# WHAT THESE NUMBERS ARE, EXACTLY: `bpm` and `key` are nominal values for the
+# original release. `energy`, `dance`, `valence` and `pop` are on the 0-1 scales
+# a streaming catalogue API uses, but they were assigned BY HAND, by ear -- they
+# are NOT retrieved from Spotify or anywhere else, and no claim is made that
+# they match any provider's published values. They exist so the recommender has
+# a realistically-shaped feature space to rank. Swap this list for a real
+# provider's response and none of the logic below changes.
+#
+# `pop` is the popularity prior that drags an open-loop recommender towards the
+# globally-liked pick -- and it is exactly what a specific room at 2am does not
+# care about. Blinding Lights carries the highest `pop` in this catalogue and is
+# also, at 171 BPM, unmixable from anything else in it: the open-loop baseline
+# reaches for it anyway.
 CATALOGUE = [
-    {"title": "Neon Tide", "artist": "Vela Nox", "genre": "Melodic Techno",
-     "bpm": 124, "key": "A min", "energy": 0.68, "dance": 0.79, "valence": 0.32, "pop": 0.62},
-    {"title": "Concrete Bloom", "artist": "Ferrite", "genre": "Melodic Techno",
-     "bpm": 126, "key": "F min", "energy": 0.74, "dance": 0.81, "valence": 0.28, "pop": 0.55},
-    {"title": "Halogen", "artist": "Kestrel Park", "genre": "Melodic Techno",
-     "bpm": 128, "key": "C min", "energy": 0.80, "dance": 0.83, "valence": 0.35, "pop": 0.71},
-    {"title": "Mercury Drift", "artist": "Alva Sound", "genre": "Deep House",
-     "bpm": 120, "key": "G min", "energy": 0.55, "dance": 0.86, "valence": 0.48, "pop": 0.78},
-    {"title": "Late Bloomer", "artist": "Marisol Vane", "genre": "Deep House",
-     "bpm": 122, "key": "D min", "energy": 0.60, "dance": 0.88, "valence": 0.52, "pop": 0.83},
-    {"title": "Paper Lantern", "artist": "Oto Kin", "genre": "Deep House",
-     "bpm": 123, "key": "A min", "energy": 0.63, "dance": 0.85, "valence": 0.45, "pop": 0.66},
-    {"title": "Iron Garden", "artist": "Bruk Theory", "genre": "Peak Techno",
-     "bpm": 134, "key": "E min", "energy": 0.92, "dance": 0.76, "valence": 0.22, "pop": 0.49},
-    {"title": "Afterburn", "artist": "Null Sector", "genre": "Peak Techno",
-     "bpm": 138, "key": "B min", "energy": 0.96, "dance": 0.72, "valence": 0.18, "pop": 0.41},
-    {"title": "Strobe Church", "artist": "Hex Lumen", "genre": "Peak Techno",
-     "bpm": 136, "key": "F min", "energy": 0.94, "dance": 0.74, "valence": 0.20, "pop": 0.44},
-    {"title": "Sunday Chrome", "artist": "Petra Lune", "genre": "Disco House",
-     "bpm": 118, "key": "C maj", "energy": 0.66, "dance": 0.91, "valence": 0.81, "pop": 0.88},
-    {"title": "Velvet Hours", "artist": "Club Soleil", "genre": "Disco House",
-     "bpm": 121, "key": "G maj", "energy": 0.70, "dance": 0.93, "valence": 0.85, "pop": 0.91},
-    {"title": "Paloma", "artist": "Rue Atlas", "genre": "Afro House",
-     "bpm": 122, "key": "D min", "energy": 0.72, "dance": 0.90, "valence": 0.64, "pop": 0.74},
-    {"title": "Dust and Salt", "artist": "Kaya Mbeki", "genre": "Afro House",
-     "bpm": 124, "key": "A min", "energy": 0.76, "dance": 0.92, "valence": 0.68, "pop": 0.69},
-    {"title": "Low Ceiling", "artist": "Grain Index", "genre": "Breakbeat",
-     "bpm": 140, "key": "E min", "energy": 0.85, "dance": 0.78, "valence": 0.40, "pop": 0.38},
-    {"title": "Pirate Radio", "artist": "Slate Runner", "genre": "Breakbeat",
-     "bpm": 142, "key": "G min", "energy": 0.88, "dance": 0.75, "valence": 0.44, "pop": 0.35},
-    {"title": "Blue Hour", "artist": "Ilma Reyes", "genre": "Ambient House",
-     "bpm": 112, "key": "F maj", "energy": 0.35, "dance": 0.60, "valence": 0.55, "pop": 0.72},
-    {"title": "Glass Field", "artist": "Noor Ateles", "genre": "Ambient House",
-     "bpm": 115, "key": "C maj", "energy": 0.40, "dance": 0.64, "valence": 0.58, "pop": 0.64},
+    {"title": "One More Time", "artist": "Daft Punk", "genre": "French House",
+     "bpm": 123, "key": "D min", "energy": 0.78, "dance": 0.85, "valence": 0.88, "pop": 0.92},
+    {"title": "Around the World", "artist": "Daft Punk", "genre": "French House",
+     "bpm": 121, "key": "A min", "energy": 0.72, "dance": 0.90, "valence": 0.74, "pop": 0.88},
+    {"title": "Intro", "artist": "Alan Braxe & Fred Falke", "genre": "French House",
+     "bpm": 124, "key": "F# min", "energy": 0.66, "dance": 0.84, "valence": 0.70, "pop": 0.55},
+    {"title": "Losing It", "artist": "Fisher", "genre": "Tech House",
+     "bpm": 125, "key": "A min", "energy": 0.93, "dance": 0.92, "valence": 0.62, "pop": 0.86},
+    {"title": "Stop It", "artist": "Fisher", "genre": "Tech House",
+     "bpm": 127, "key": "G min", "energy": 0.90, "dance": 0.90, "valence": 0.55, "pop": 0.70},
+    {"title": "WTF", "artist": "HUGEL", "genre": "Tech House",
+     "bpm": 124, "key": "C min", "energy": 0.86, "dance": 0.93, "valence": 0.68, "pop": 0.74},
+    {"title": "Morenita", "artist": "HUGEL", "genre": "Tech House",
+     "bpm": 124, "key": "F min", "energy": 0.84, "dance": 0.94, "valence": 0.72, "pop": 0.69},
+    {"title": "Gecko (Overdrive)", "artist": "Oliver Heldens", "genre": "Future House",
+     "bpm": 128, "key": "G min", "energy": 0.88, "dance": 0.88, "valence": 0.64, "pop": 0.78},
+    {"title": "Titanium", "artist": "David Guetta", "genre": "Big Room",
+     "bpm": 126, "key": "Eb min", "energy": 0.79, "dance": 0.60, "valence": 0.29, "pop": 0.95},
+    {"title": "I'm Good (Blue)", "artist": "David Guetta & Bebe Rexha", "genre": "Big Room",
+     "bpm": 128, "key": "E min", "energy": 0.96, "dance": 0.78, "valence": 0.60, "pop": 0.93},
+    {"title": "Summer", "artist": "Calvin Harris", "genre": "Big Room",
+     "bpm": 128, "key": "F min", "energy": 0.90, "dance": 0.72, "valence": 0.60, "pop": 0.90},
+    {"title": "Feel So Close", "artist": "Calvin Harris", "genre": "Big Room",
+     "bpm": 128, "key": "Bb maj", "energy": 0.88, "dance": 0.72, "valence": 0.66, "pop": 0.87},
+    {"title": "This Girl", "artist": "Kungs vs Cookin' on 3 Burners", "genre": "Deep House",
+     "bpm": 124, "key": "C min", "energy": 0.77, "dance": 0.89, "valence": 0.82, "pop": 0.89},
+    {"title": "Don't You Know", "artist": "Kungs", "genre": "Deep House",
+     "bpm": 122, "key": "A min", "energy": 0.70, "dance": 0.86, "valence": 0.76, "pop": 0.66},
+    {"title": "I Follow Rivers (The Magician Remix)", "artist": "Lykke Li", "genre": "Indie Dance",
+     "bpm": 122, "key": "G min", "energy": 0.74, "dance": 0.88, "valence": 0.58, "pop": 0.84},
+    {"title": "Save Your Tears", "artist": "The Weeknd", "genre": "Synth Pop",
+     "bpm": 118, "key": "C maj", "energy": 0.83, "dance": 0.68, "valence": 0.64, "pop": 0.94},
+    {"title": "Blinding Lights", "artist": "The Weeknd", "genre": "Synthwave",
+     "bpm": 171, "key": "F min", "energy": 0.73, "dance": 0.51, "valence": 0.33, "pop": 0.99},
 ]
-
 MIXABLE_BPM_PCT = 0.06   # a DJ beatmatches roughly +/-6% without artefacts
 
 # Feature weights for open-loop content similarity. Tempo is normalised over the
-# 108-146 BPM range the catalogue spans.
+# 112-174 BPM range the catalogue spans.
 _SIM_W = {"energy": 0.30, "dance": 0.30, "valence": 0.15, "tempo": 0.25}
-_BPM_LO, _BPM_HI = 108.0, 146.0
+_BPM_LO, _BPM_HI = 112.0, 174.0
 
 
 def _tempo_norm(bpm):

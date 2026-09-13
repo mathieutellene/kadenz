@@ -5,7 +5,7 @@
   <title>Kadenz live — close the loop with your own camera</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Music recommenders are open loop. Kadenz closes it with computer vision — running entirely in your browser, on your own camera.">
-  <link rel="stylesheet" href="live.css?v=5">
+  <link rel="stylesheet" href="live.css?v=6">
 </head>
 <body>
 
@@ -70,7 +70,7 @@
         <tr><th>BPM, groove sync, level</th>
             <td><strong>Real when you allow the microphone</strong>, from spectral flux rather than librosa. Denied or silent, they stay blank — never invented</td></tr>
         <tr><th>The catalogue itself</th>
-            <td><strong>Simulated.</strong> 17 fictional tracks with realistic audio features. No licensed catalogue API is publicly available for this</td></tr>
+            <td><strong>Real releases</strong>, used as recognisable labels — but their tempo, key and 0–1 feature values are estimates assigned by hand, not retrieved from Spotify or anywhere else</td></tr>
       </table>
       <p>A webcam sees one room, not a dancefloor. Expect one or two people and a
       modest energy range — the crowd numbers in the README come from real venue footage.</p>
@@ -113,7 +113,7 @@
 
     <div class="panel deck">
       <div class="panel-h">ON THE DECK
-        <span class="sim" title="No licensed catalogue: the music metadata is a synthetic stand-in. The crowd response driving the loop is measured from your camera.">SIMULATED</span>
+        <span class="sim" title="Real tracks, but their audio-feature values are estimates assigned by hand, not retrieved from any provider. The crowd response driving the loop is measured from your camera.">SIMULATED</span>
       </div>
       <div class="track-title" id="np-title">--</div>
       <div class="track-meta" id="np-meta">waiting for the set to start</div>
@@ -160,6 +160,6 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
-<script type="module" src="live.js?v=5"></script>
+<script type="module" src="live.js?v=6"></script>
 </body>
 </html>

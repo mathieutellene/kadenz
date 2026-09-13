@@ -7,7 +7,7 @@
 
 ![Kadenz overlay](docs/media/demo.gif)
 
-<sub>Night stage. The dancers run amber; the people sitting on the steps in the foreground stay cool. Nothing is labelled by hand — the colour *is* the measured motion.</sub>
+<sub>Rooftop club. The front rows are tracked; the packed crowd behind them is not — at that distance people are a few pixels tall and a person detector cannot see them at all (see <a href="#limitations">Limitations</a>).</sub>
 
 ### ▶ [Try it on your own camera — no install](https://mathieutellene.github.io/kadenz/)
 
@@ -35,19 +35,20 @@ re-ranked by the one signal nobody has: *how the crowd actually reacted,
 measured in real time.*
 
 ```
-       ┌──────────────────────────── the loop ────────────────────────────┐
-       │                                                                  │
-       ▼                                                                  │
-  ┌─────────┐      ┌────────┐      ┌──────────┐      ┌───────────────┐    │
-  │ SPOTIFY │─────▶│  DECK  │─────▶│  VISION  │─────▶│ CROWD RESPONSE│────┘
-  │catalogue│      │ track  │      │ YOLO-pose│      │  reward 0-100 │
-  │ +feats  │      │ playing│      │ + optflow│      │  per track    │
-  └─────────┘      └────────┘      └──────────┘      └───────────────┘
-    open loop stops here ─┘                      └─ Kadenz starts here
+       ┌────────────────────── the loop ──────────────────────┐
+       │                                                      │
+       ▼                                                      │
+┌────────────┐     ┌─────────┐     ┌───────────┐     ┌────────┴───────┐
+│  SPOTIFY   │────▶│  DECK   │────▶│  VISION   │────▶│ CROWD RESPONSE │
+│ catalogue  │     │  track  │     │ YOLO-pose │     │  reward 0-100  │
+│ + features │     │ playing │     │ + optflow │     │   per track    │
+└────────────┘     └─────────┘     └───────────┘     └────────────────┘
+└─ an open-loop recommender ─┘     └──────── what Kadenz adds ────────┘
 ```
 
-<sub>Kadenz is not affiliated with or endorsed by Spotify. The catalogue in v1.0
-is a synthetic stand-in with realistic audio features — see
+<sub>Kadenz is not affiliated with or endorsed by Spotify, or by any artist or
+label named in the catalogue. The tracks are real; their audio-feature values
+are estimates assigned by hand, not retrieved from any provider — see
 <a href="#what-is-real-and-what-is-simulated">What is real</a>.</sub>
 
 Everything runs locally on a laptop CPU. No GPU, no cloud, no per-frame API calls.
@@ -68,41 +69,44 @@ A ten-track simulated set against a floor that happens to love peak techno
 (`scripts/sim_loop.py`):
 
 ```
- #  PLAYING                  resp      Δ   OPEN LOOP WANTS   CLOSED LOOP PICKS
-──────────────────────────────────────────────────────────────────────────────
- 1  Dust and Salt              66           Velvet Hours      Dust and Salt   ◆
- 2  Velvet Hours               46    -30%   Velvet Hours      Velvet Hours
- 3  Paloma                     63    +14%   Sunday Chrome     Paloma          ◆
- 4  Halogen                    55     -5%   Sunday Chrome     Halogen         ◆
- 5  Paper Lantern              44    -24%   Sunday Chrome     Paper Lantern   ◆
- 6  Low Ceiling                74    +34%   Sunday Chrome     Low Ceiling     ◆
- 7  Pirate Radio               72    +24%   Sunday Chrome     Pirate Radio    ◆
- 8  Glass Field                23    -62%   Sunday Chrome     Glass Field     ◆
- 9  Iron Garden                88    +59%   Sunday Chrome     Iron Garden     ◆
-10  Afterburn                  88    +49%   Sunday Chrome     Afterburn       ◆
-──────────────────────────────────────────────────────────────────────────────
-divergence: 90% — 9 of 10 picks corrected by the crowd
-final call: Peak Techno over Disco House (#10 on audio features alone)
+#  CLOSED LOOP PLAYED                              resp      Δ   OPEN LOOP WANTED INSTEAD
+───────────────────────────────────────────────────────────────────────────────────────────────────
+ 1  Don't You Know — Kungs                            62           Blinding Lights ◆
+ 2  Losing It — Fisher                                86    +39%   Blinding Lights ◆
+ 3  Stop It — Fisher                                  85    +16%   Blinding Lights ◆
+ 4  Gecko (Overdrive) — Oliver Heldens                70    -10%   Blinding Lights ◆
+ 5  WTF — HUGEL                                       88    +16%   Blinding Lights ◆
+ 6  Morenita — HUGEL                                  88    +12%   Blinding Lights ◆
+ 7  I Follow Rivers (The Magician Remix) — Lykke Li   42    -48%   Blinding Lights ◆
+ 8  I'm Good (Blue) — David Guetta & Bebe Rexha       48    -36%   Blinding Lights ◆
+ 9  One More Time — Daft Punk                         76     +7%   Blinding Lights ◆
+10  Around the World — Daft Punk                      76     +6%   Blinding Lights ◆
+───────────────────────────────────────────────────────────────────────────────────────────────────
+divergence: 100% — 10 of 10 picks corrected by the crowd
+final call: French House over Synthwave (#12 on audio features alone)
 ```
 
 Two things to notice, and they are the whole argument:
 
-1. **The open loop gets stuck.** *Sunday Chrome* is the most popular track in
-   the catalogue, so it wins seven picks in a row. That is not a bug in the
-   baseline — it is popularity bias, the known failure mode of
-   content-plus-popularity recommenders, reproduced faithfully.
-2. **The closed loop explores, then commits.** It pays for information early
-   (*Glass Field*, response 23, −62%), learns the room, and lands on peak techno
-   at response 88. The track it finally plays ranks **#10 of 17** on audio
-   features alone. No open-loop model would ever reach it.
+1. **The open loop asks for *Blinding Lights* ten times out of ten.** It carries
+   the highest popularity in the catalogue, so it wins every round — and at
+   171 BPM it cannot be beatmatched from anything else in the set, which the
+   content model has no way to know. That is not a strawman: it is popularity
+   bias, the known failure mode of content-plus-popularity recommenders,
+   reproduced faithfully.
+2. **The closed loop explores, then commits.** It pays for information early and
+   late — *I Follow Rivers* at −48%, *I'm Good (Blue)* at −36% — and in between
+   finds what this room is actually here for: Fisher and HUGEL at 86–88. The
+   genre it settles on ranks **#12 of 17** on audio features alone. No
+   open-loop model would ever reach it.
 
-The genre table it learned, from nothing, in ten tracks:
+The genre table it learned, from nothing, in ten tracks — note that it also
+learned what *not* to play, which is the half a recommender never finds out:
 
 ```
-  Peak Techno       87.7     Breakbeat         72.7
-  Afro House        64.6     Melodic Techno    55.1
-  Disco House       45.7     Deep House        44.0
-  Ambient House     22.6
+  Tech House        86.7     French House      75.7
+  Future House      70.1     Deep House        61.6
+  Big Room          47.6     Indie Dance       41.8
 ```
 
 ---
@@ -135,12 +139,9 @@ ramp: **cyan = still → amber → hot pink = going off.**
 
 ![Per-person overlay](docs/media/overlay.jpg)
 
-*Rooftop club, and an honest frame: the front rows are tracked, the packed crowd
-behind them is not. At that distance people are a few pixels tall and a person
-detector cannot see them at all (see [Limitations](#limitations)). Among the
-people it does resolve, the colour spread from cyan to orange is the measured
-motion — who is dancing and who is standing still, with nothing labelled by
-hand.*
+*Night stage. The people sitting on the steps in the foreground come out cold;
+the ones dancing come out warm. Nobody labelled that — the split falls out of
+the motion measurement alone, and the colour ramp is doing all the work.*
 
 ---
 
@@ -166,7 +167,7 @@ beatmatch without audible artefacts. A recommender that ignores it produces
 suggestions no human can actually mix.
 
 **The explanation.** Every pick ships with the sentence that justifies it
-(*"Peak Techno running +59% above tonight's average"*). A DJ will not take an
+(*"Tech House running +39% above tonight's average"*). A DJ will not take an
 instruction from a black box mid-set, so the engine argues its case.
 
 ---
@@ -261,8 +262,8 @@ Same quality/speed dial as `det_imgsz`, same shape of trade-off, exposed as a
 button in the top bar. With WebGPU available it is far faster than either.
 
 The port is not taken on trust: driven by the same synthetic floor,
-`docs/dj.js` reproduces `scripts/sim_loop.py` exactly — 9 of 10 picks corrected,
-Peak Techno learned at 88.
+`docs/dj.js` reproduces `scripts/sim_loop.py` exactly — 10 of 10 picks
+corrected, Tech House learned at 87.
 
 ---
 
@@ -275,11 +276,12 @@ Being explicit about this, because a demo that blurs the line is worthless:
 | Person detection, tracking, pose, motion energy, occupancy, flux, per-person energy | **Real** — measured from the footage |
 | Groove sync, BPM, drops, track ID (Shazam) | **Real when there is real audio.** Silent footage shows `n/a` rather than a number |
 | **Both recommenders** — the open-loop ranking and the closed-loop re-ranking | **Real code, really executed.** Both rank the live catalogue on every track change; the divergence number is counted, not written |
-| The catalogue itself — titles, artists, genres, audio features | **Simulated** — 17 fictional tracks with realistic features (`engine/dj.py`). No licensed catalogue API is publicly available for this use; swap `CATALOGUE` for a real provider's response and nothing else changes |
+| The tracks themselves | **Real releases**, used as recognisable labels — a DJ can tell at a glance whether a suggestion makes sense |
+| Their audio-feature values | **Estimated by hand.** `bpm` and `key` are nominal; `energy`, `danceability`, `valence` and `popularity` were assigned by ear on the 0–1 scales a catalogue API uses. **They are not retrieved from Spotify or anywhere else**, and no claim is made that they match any provider's published values. Swap `CATALOGUE` for a real provider's response and nothing else changes |
 | Level in dB SPL | **Estimated** — a laptop mic is not a calibrated SPL meter |
 
 The crowd response that drives the loop is **measured for real** — that is the
-half that matters, and the half that does not exist anywhere else. Simulated
+half that matters, and the half that does not exist anywhere else. Estimated
 values are tagged `SIMULATED` / `· sim` in amber in the UI, never presented as
 measurements. Silent audio is rejected outright: analysing it would produce a
 fabricated BPM.
@@ -317,7 +319,12 @@ AGPL-3.0. Swapping the detector for an Apache-2.0 model (RT-DETR, D-FINE) would
 allow a permissive licence.
 
 Demo footage: [Pixabay](https://pixabay.com/) content licence — one scene per
-visual: night stage (the animation above), rooftop club (the per-person still),
-open-air concert (the dashboard). The track catalogue is fictional.
+visual: rooftop club (the animation at the top), night stage (the per-person
+still), open-air concert (the dashboard).
+
+Track titles and artists in `engine/dj.py` are real releases, used as
+recognisable labels. Their audio-feature values are not: see *What is real and
+what is simulated*. No affiliation with, or endorsement by, any artist or label
+is implied.
 Spotify is a trademark of Spotify AB; the mark appears here to identify the
 class of system Kadenz complements, and implies no affiliation or endorsement.
