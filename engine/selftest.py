@@ -39,7 +39,9 @@ def main():
             last_ms = lf[0]
             frames += 1
             if frames == 90 and not saved:
-                Path("data/selftest_frame.jpg").write_bytes(lf[1])
+                out = Path("data/selftest_frame.jpg")
+                out.parent.mkdir(parents=True, exist_ok=True)
+                out.write_bytes(lf[1])
                 saved = True
         try:
             msg = q.get(timeout=0.03)

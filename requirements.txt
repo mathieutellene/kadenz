@@ -10,5 +10,14 @@ soundfile>=0.12
 imageio-ffmpeg>=0.5
 pyyaml>=6.0
 yt-dlp
-pyaudiowpatch>=0.2.12
+# Windows-only wheels, no sdist: without the marker, `pip install -r`
+# fails outright on Linux and macOS before anything can run. The code
+# already imports it defensively (engine/audio_live.py).
+pyaudiowpatch>=0.2.12; sys_platform == "win32"
 shazamio
+
+# Imported directly rather than only through ultralytics:
+#   engine/detector.py    import torch        (unguarded, top level)
+#   engine/audio.py       import pydub        (guarded, optional path)
+torch
+pydub
