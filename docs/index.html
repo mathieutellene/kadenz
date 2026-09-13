@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Kadenz live — close the loop with your own camera</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Music recommenders are open loop. Kadenz closes it with computer vision — running entirely in your browser, on your own camera.">
+  <link rel="stylesheet" href="live.css?v=4">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="spotify" viewBox="0 0 24 24">
+    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+  </symbol>
+</svg>
+
+<header class="topbar">
+  <div class="brand"><i class="mark"></i>KADENZ<span class="ver">live</span></div>
+  <nav class="loopbar">
+    <span class="ls"><svg class="sp"><use href="#spotify"/></svg>CATALOGUE</span>
+    <span class="lsep">&rsaquo;</span><span class="ls">DECK</span>
+    <span class="lsep">&rsaquo;</span><span class="ls">VISION</span>
+    <span class="lsep">&rsaquo;</span><span class="ls">FLOOR RESPONSE</span>
+    <span class="lback">&#8626;</span>
+  </nav>
+  <span id="status" class="status">READY</span>
+  <div class="spacer"></div>
+  <a class="ghlink" href="https://github.com/mathieutellene/kadenz">source &nearr;</a>
+  <button id="btn-size" class="btn" hidden title="Detection size: the same quality/speed dial as det_imgsz on the desktop. 640 is a separate 13 MB download.">320px</button>
+  <button id="btn-stop" class="btn danger" hidden>STOP</button>
+</header>
+
+<!-- ------------------------------------------------------------- landing -->
+<section id="intro" class="intro">
+  <div class="intro-inner">
+    <h1>A recommender never finds out whether the floor emptied.</h1>
+    <p class="lede">
+      Engines like <svg class="sp big"><use href="#spotify"/></svg> <strong>Spotify's</strong>
+      answer one question extremely well — <em>given this track, what sounds like it?</em> —
+      from audio features and what millions of other listeners did next. But they are
+      <strong>open loop</strong>. They know what was played. They never learn how the room reacted.
+    </p>
+    <p class="lede">
+      <strong>Kadenz closes that loop with a camera.</strong> Point it at people moving and it
+      measures the response, then re-ranks the same catalogue an open-loop model ranks blind.
+      Both run side by side below, so you can watch them disagree.
+    </p>
+
+    <button id="btn-start" class="btn primary big">START — USE MY CAMERA</button>
+    <p id="intro-error" class="err" hidden></p>
+
+    <div class="privacy">
+      <strong>This runs entirely in your browser.</strong> The pose model is downloaded once
+      (~13&nbsp;MB) and every frame is measured and discarded on your own machine. There is no
+      server in this build: no video, no audio and no measurement is uploaded anywhere.
+      <a href="https://github.com/mathieutellene/kadenz/blob/main/docs/live.js">Read the code</a>
+      — it is the page you are on.
+    </div>
+
+    <details class="honest">
+      <summary>What this browser demo does and does not do</summary>
+      <table>
+        <tr><th>Person detection, pose, tracking</th>
+            <td><strong>Real.</strong> The same YOLOv8-pose weights as the desktop app, exported to ONNX</td></tr>
+        <tr><th>Crowd energy, per-person energy, floor flux</th>
+            <td><strong>Real</strong>, but measured by frame differencing rather than the desktop's dense optical flow — coarser, and it is what drives the recommender here</td></tr>
+        <tr><th>Both recommenders</th>
+            <td><strong>Real code.</strong> A port of <code>engine/dj.py</code>; the catalogue is generated from the Python so the two cannot drift</td></tr>
+        <tr><th>BPM, groove sync, level</th>
+            <td><strong>Real when you allow the microphone</strong>, from spectral flux rather than librosa. Denied or silent, they stay blank — never invented</td></tr>
+        <tr><th>The catalogue itself</th>
+            <td><strong>Simulated.</strong> 17 fictional tracks with realistic audio features. No licensed catalogue API is publicly available for this</td></tr>
+      </table>
+      <p>A webcam sees one room, not a dancefloor. Expect one or two people and a
+      modest energy range — the crowd numbers in the README come from real venue footage.</p>
+    </details>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------------- stage -->
+<main id="stage" hidden>
+  <section class="stagewrap">
+    <div class="framebox">
+      <video id="cam" playsinline muted></video>
+      <canvas id="overlay"></canvas>
+      <div id="clock">0:00</div>
+    </div>
+    <canvas id="chart"></canvas>
+  </section>
+
+  <aside class="rail">
+    <div class="panel">
+      <div class="panel-h">CROWD ENERGY <span class="mini">the reward signal</span></div>
+      <div class="energy-row">
+        <span class="energy-val" id="v-energy">--</span>
+        <span class="energy-max">/100</span>
+        <span class="energy-trend" id="v-trend"></span>
+      </div>
+      <div class="meter"><div class="fill" id="energy-fill"></div><div class="ticks"></div></div>
+    </div>
+
+    <div class="grid">
+      <div class="cell"><div class="cv" id="v-people">--</div><div class="cl">People</div></div>
+      <div class="cell"><div class="cv" id="v-moving">--</div><div class="cl">Moving</div></div>
+      <div class="cell"><div class="cv" id="v-bpm">--</div><div class="cl">BPM</div></div>
+      <div class="cell"><div class="cv" id="v-db">--</div><div class="cl">Level dB SPL</div></div>
+      <div class="cell hero"><div class="cv" id="v-groove">--</div><div class="cl">Groove sync</div></div>
+      <div class="cell"><div class="cv" id="v-flux">--</div><div class="cl">Floor flux /min</div></div>
+    </div>
+    <div id="audio-note" class="note"></div>
+
+    <div class="panel deck">
+      <div class="panel-h">ON THE DECK
+        <span class="sim" title="No licensed catalogue: the music metadata is a synthetic stand-in. The crowd response driving the loop is measured from your camera.">SIMULATED</span>
+      </div>
+      <div class="track-title" id="np-title">--</div>
+      <div class="track-meta" id="np-meta">waiting for the set to start</div>
+      <div class="feats">
+        <div class="feat"><span class="fl">ENERGY</span><div class="fbar"><i id="f-energy"></i></div><span class="fv" id="fv-energy">--</span></div>
+        <div class="feat"><span class="fl">DANCE</span><div class="fbar"><i id="f-dance"></i></div><span class="fv" id="fv-dance">--</span></div>
+        <div class="feat"><span class="fl">VALENCE</span><div class="fbar"><i id="f-valence"></i></div><span class="fv" id="fv-valence">--</span></div>
+      </div>
+      <div class="resp-row"><span>MEASURED FLOOR RESPONSE</span><span class="resp-val" id="np-resp">--</span></div>
+      <div class="meter thin"><div class="fill" id="resp-fill"></div></div>
+    </div>
+
+    <div class="panel loop">
+      <div class="panel-h">NEXT TRACK <span class="sub">two models, one catalogue</span>
+        <span class="mini" id="loop-rate"></span>
+      </div>
+      <div class="side open">
+        <div class="side-h"><svg class="sp"><use href="#spotify"/></svg>
+          <span class="side-name">OPEN LOOP</span><span class="side-tag">audio features only</span></div>
+        <div class="side-title" id="open-title">--</div>
+        <div class="side-why" id="open-why">cold start &mdash; nothing playing yet</div>
+      </div>
+      <div class="verdict" id="loop-verdict">
+        <span class="arrow">&#8595;</span><span id="verdict-text">the floor has not spoken yet</span>
+      </div>
+      <div class="side closed">
+        <div class="side-h"><i class="mark sm"></i>
+          <span class="side-name">CLOSED LOOP</span><span class="side-tag">+ crowd response</span></div>
+        <div class="side-title" id="next-title">--</div>
+        <div class="side-why" id="next-why">Measuring how you react&hellip;</div>
+        <div class="alts" id="next-alts"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h">WHAT THIS FLOOR LIKES <span class="sub">learned live</span>
+        <span id="proc-fps" class="mini"></span></div>
+      <div id="genre-list"><div class="empty">No tracks scored yet</div></div>
+    </div>
+
+    <div class="foot">Catalogue simulated &middot; not affiliated with Spotify</div>
+    <div id="statusline"></div>
+  </aside>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+<script type="module" src="live.js?v=4"></script>
+</body>
+</html>

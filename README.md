@@ -9,6 +9,13 @@
 
 <sub>Night stage. The dancers run amber; the people sitting on the steps in the foreground stay cool. Nothing is labelled by hand — the colour *is* the measured motion.</sub>
 
+### ▶ [Try it on your own camera — no install](https://mathieutellene.github.io/kadenz/)
+
+The whole loop also runs **client-side in a browser**: the same YOLOv8-pose
+weights exported to ONNX, the same recommender, both models ranking side by
+side. Nothing is uploaded — there is no server in that build at all. Point it at
+yourself and watch the closed loop learn what moves *you*.
+
 ---
 
 ## The problem: recommendation is an open loop
@@ -223,6 +230,39 @@ Live camera mode exists (`{"type":"start","webcam":true}` over the WebSocket,
 `webcam_index` in `config.yaml`) and captures system audio or the mic on Windows
 via WASAPI loopback, which enables real BPM, real Shazam track ID and real
 Groove Sync.
+
+---
+
+## The browser build
+
+[`mathieutellene.github.io/kadenz`](https://mathieutellene.github.io/kadenz/) is
+the same loop with no Python, no install and no server: `docs/` is a static page
+that runs the pose model on the visitor's own camera and keeps every frame on
+their machine.
+
+| | desktop | browser |
+|---|---|---|
+| Detector | YOLOv8-pose (PyTorch) | the same weights, exported to ONNX, run by onnxruntime-web on WebGPU or WASM |
+| Tracker | ByteTrack | greedy IoU association |
+| Motion | Farnebäck dense optical flow | per-box frame differencing |
+| Audio | librosa + Shazam | Web Audio spectral flux (BPM, level, groove sync) |
+| Recommender | `engine/dj.py` | `docs/dj.js` — a port, with the catalogue **generated** from the Python by `scripts/build_catalogue.py` so the two cannot drift |
+
+Measured in-browser on a laptop with no GPU, single-threaded WASM — the floor
+everyone lands on, because GitHub Pages cannot send the COOP/COEP headers that
+would unlock WASM threads:
+
+| detection size | people found on the demo frame | inference |
+|---|---|---|
+| **320 (default)** | 3 | ~165 ms |
+| 640 (crowd mode, a second 13 MB download) | 12 | ~400 ms |
+
+Same quality/speed dial as `det_imgsz`, same shape of trade-off, exposed as a
+button in the top bar. With WebGPU available it is far faster than either.
+
+The port is not taken on trust: driven by the same synthetic floor,
+`docs/dj.js` reproduces `scripts/sim_loop.py` exactly — 9 of 10 picks corrected,
+Peak Techno learned at 88.
 
 ---
 

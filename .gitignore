@@ -20,5 +20,12 @@ Thumbs.db
 # Local launchers and dev helpers
 *.bat
 scripts/*
-# ...except the recommender demo, which the README tells people to run
+# ...except the two the README tells people to run
 !scripts/sim_loop.py
+!scripts/build_catalogue.py
+
+# The browser build under docs/ IS the published site (GitHub Pages), model
+# weights included -- those are the one exception to ignoring model binaries.
+!docs/model/
+!docs/model/*.onnx
+.claude/
