@@ -39,7 +39,7 @@ measured in real time.*
        │                                                      │
        ▼                                                      │
 ┌────────────┐     ┌─────────┐     ┌───────────┐     ┌────────┴───────┐
-│  SPOTIFY   │────▶│  DECK   │────▶│  VISION   │────▶│ CROWD RESPONSE │
+│  SPOTIFY   │───▶│  DECK   │────▶│  VISION   │───▶│ CROWD RESPONSE │
 │ catalogue  │     │  track  │     │ YOLO-pose │     │  reward 0-100  │
 │ + features │     │ playing │     │ + optflow │     │   per track    │
 └────────────┘     └─────────┘     └───────────┘     └────────────────┘
