@@ -201,8 +201,16 @@ export class DJEngine {
     const gap = rankShift > 0 ? ` (#${rankShift + 1} on audio features alone)` : "";
     // A divergence is not automatically evidence of learning: if the winning
     // genre has no reward yet, the loop is exploring, and it should say so.
-    if (!this._reward(this.genreReward, closed.genre).length) {
-      return `Exploring: ${closed.genre} is untested on this floor tonight${gap}`;
+    const cR = this._reward(this.genreReward, closed.genre);
+    if (!cR.length) return `Exploring: ${closed.genre} is untested on this floor tonight${gap}`;
+    // And "crowd response overrides" is only true when the crowd actually rates
+    // the winner higher — it can win on tempo, danceability or the repeat
+    // penalty while scoring worse, and saying otherwise puts words in the
+    // floor's mouth.
+    const oR = this._reward(this.genreReward, open.genre);
+    if (oR.length && mean(cR) <= mean(oR)) {
+      return `${closed.genre} over ${open.genre}, though ${open.genre} scored `
+        + `higher tonight (${Math.round(mean(oR))} vs ${Math.round(mean(cR))})`;
     }
     return `Crowd response overrides the feature match: ${closed.genre} over ${open.genre}${gap}`;
   }

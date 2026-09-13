@@ -331,9 +331,19 @@ class DJEngine:
         gap = ""
         if rank_shift is not None and rank_shift > 0:
             gap = " (#{} on audio features alone)".format(rank_shift + 1)
-        if not self.genre_reward.get(closed["genre"]):
+        c_r = self.genre_reward.get(closed["genre"])
+        if not c_r:
             return "Exploring: {} is untested on this floor tonight{}".format(
                 closed["genre"], gap)
+        # "Crowd response overrides" is only true when the crowd actually rates
+        # the winner higher. It can win on tempo, danceability or the repeat
+        # penalty while scoring WORSE, and claiming the room asked for it would
+        # be putting words in the floor's mouth.
+        o_r = self.genre_reward.get(openl["genre"])
+        if o_r and self._mean(c_r) <= self._mean(o_r):
+            return ("{} over {}, though {} scored higher tonight ({:.0f} vs {:.0f})"
+                    .format(closed["genre"], openl["genre"], openl["genre"],
+                            self._mean(o_r), self._mean(c_r)))
         return "Crowd response overrides the feature match: {} over {}{}".format(
             closed["genre"], openl["genre"], gap)
 
