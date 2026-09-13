@@ -331,6 +331,15 @@ fabricated BPM.
   that loves a track from a floor that is merely warm.
 - Person IDs are anonymous integers that die with the session. No faces are
   stored, no identity is computed, only aggregates leave the engine.
+- **Known and unfixed:** `engine/metrics.py` percentile-ranks crowd energy with
+  no absolute floor, so on a scene with no real motion it ranks sensor noise
+  against sensor noise and returns a confident mid-range number. The browser
+  build hit this and was fixed (`NOISE_EPS` in `docs/vision.js`, measured: 0.05
+  mean |Δ| while still versus 11.6 while moving). The desktop keeps the flaw
+  because real venue footage always contains motion, so it never surfaces there
+  — but point a static camera at a still room and the reading is meaningless.
+  Fixing it properly means re-measuring the threshold against Farnebäck flow
+  magnitudes, which are on a different scale entirely.
 
 ## Roadmap to v1.1
 
