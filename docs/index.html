@@ -5,7 +5,7 @@
   <title>Kadenz live — close the loop with your own camera</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Music recommenders are open loop. Kadenz closes it with computer vision — running entirely in your browser, on your own camera.">
-  <link rel="stylesheet" href="live.css?v=15">
+  <link rel="stylesheet" href="live.css?v=22">
 </head>
 <body>
 
@@ -44,16 +44,18 @@
 
     <h1>A recommender never finds out<br class="wide">whether the floor emptied.</h1>
 
-    <p class="lede">
-      Engines like <svg class="sp big"><use href="#spotify"/></svg><strong>Spotify's</strong>
-      answer one question extremely well — <em>given this track, what sounds like it?</em>
-      They cannot answer the one that matters in a room: <strong>did anybody move?</strong>
-    </p>
-    <p class="lede">
-      Kadenz closes that loop with a camera. It measures the response and re-ranks
-      the same catalogue an open-loop model ranks blind — both running side by side,
-      so you can watch them disagree.
-    </p>
+    <div class="ledes">
+      <p class="lede">
+        Engines like <svg class="sp big"><use href="#spotify"/></svg><strong>Spotify's</strong>
+        answer one question extremely well — <em>given this track, what sounds like it?</em>
+        They cannot answer the one that matters in a room: <strong>did anybody move?</strong>
+      </p>
+      <p class="lede">
+        Kadenz closes that loop with a camera. It measures the response and re-ranks
+        the same catalogue an open-loop model ranks blind — both running side by side,
+        so you can watch them disagree.
+      </p>
+    </div>
 
     <div class="cta-row">
       <button id="btn-start" class="btn primary big">Use my camera</button>
@@ -82,7 +84,7 @@
         <dd><b>Real.</b> The same YOLOv8-pose weights as the desktop app, exported to ONNX</dd>
 
         <dt>Crowd energy, per-person energy, flux</dt>
-        <dd><b>Real</b>, from frame differencing rather than the desktop's dense optical flow — coarser, and it is what drives the recommender here</dd>
+        <dd><b>Real</b>, from frame differencing rather than the desktop's dense optical flow — coarser, and it is what drives the recommender here. Below a measured noise floor it reads <b>0</b> rather than ranking sensor noise against itself, so sitting still gives zero, not a number</dd>
 
         <dt>Both recommenders</dt>
         <dd><b>Real code.</b> A port of <code>engine/dj.py</code>; the catalogue is generated from the Python so the two cannot drift</dd>
@@ -180,7 +182,46 @@
   </aside>
 </main>
 
+<!-- --------------------------------------------------------------- report -->
+<section id="report" hidden>
+  <div class="rep-inner">
+    <header class="rep-head">
+      <div>
+        <p class="eyebrow"><i class="dot"></i>Set report</p>
+        <h2>What the floor told it.</h2>
+      </div>
+      <button id="rep-close" class="btn">Close</button>
+    </header>
+
+    <div id="rep-stats" class="rep-stats"></div>
+
+    <p id="rep-verdict" class="rep-verdict"></p>
+
+    <section class="rep-block">
+      <h3>Energy across the set <span>each vertical line is a track change</span></h3>
+      <canvas id="rep-timeline"></canvas>
+    </section>
+
+    <div class="rep-cols">
+      <section class="rep-block">
+        <h3>Tracks by measured response <span>what the room actually did</span></h3>
+        <ol id="rep-tracks" class="rep-tracks"></ol>
+      </section>
+      <section class="rep-block">
+        <h3>Genres <span>learned from nothing, this session</span></h3>
+        <div id="rep-genres"></div>
+      </section>
+    </div>
+
+    <p class="rep-foot">
+      Response is the mean crowd energy measured while each track held the deck —
+      percentile-ranked against this session only, so it is not comparable between
+      rooms. Track metadata is estimated; the response is measured.
+    </p>
+  </div>
+</section>
+
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
-<script type="module" src="live.js?v=15"></script>
+<script type="module" src="live.js?v=22"></script>
 </body>
 </html>

@@ -10,13 +10,14 @@
  * analyse() runs its own async loop at whatever rate inference manages. The
  * video is never blocked on a forward pass.
  */
-import { DJEngine } from "./dj.js";
+import { DJEngine } from "./dj.js?v=22";
 import {
   EDGES, MODELS, Motion, Normaliser, Tracker,
   loadModel, makeLetterbox, postprocess, preprocess,
-} from "./vision.js";
-import { AudioAnalyser, grooveSync } from "./audio.js";
-import { Backdrop } from "./backdrop.js";
+} from "./vision.js?v=22";
+import { AudioAnalyser, grooveSync } from "./audio.js?v=22";
+import { Backdrop } from "./backdrop.js?v=22";
+import { buildReport, drawTimeline } from "./report.js?v=22";
 
 const TRACK_SECONDS = 14;        // matches config.yaml dj.track_seconds
 const METRIC_HZ = 4;
@@ -40,6 +41,9 @@ const state = {
   tracks: [], energy: null, prevEnergy: null, t0: 0, lastMetric: 0, lastDJ: 0,
   procFps: 0, history: [], djCmp: null, hasAudio: false, db: null, bpm: null,
   groove: null, fatal: null, metricTimer: null, size: 320, swapping: false,
+  // The live chart keeps a 20 s window; the report needs the whole set, so
+  // this logs at 1 Hz alongside it. 1 Hz for an hour is 3600 points -- nothing.
+  sessionLog: [], lastLog: -99, peopleSeen: 0, repaintReport: null,
 };
 
 /* ------------------------------------------------------------------ startup */
@@ -92,6 +96,9 @@ async function boot() {
   state.norm = new Normaliser();
   state.perNorm = new Normaliser(4000);
   state.dj = new DJEngine();
+  state.sessionLog = [];
+  state.lastLog = -99;
+  state.peopleSeen = 0;
   state.t0 = performance.now() / 1000;
   state.running = true;
 
@@ -268,6 +275,11 @@ function tickMetrics(now) {
   $("v-bpm").textContent = state.bpm == null ? "--" : state.bpm;
 
   state.history.push({ t, e: e ?? 0 });
+  if (t - state.lastLog >= 1) {
+    state.lastLog = t;
+    state.sessionLog.push({ t, e: e ?? 0, people });
+  }
+  state.peopleSeen = Math.max(state.peopleSeen, state.tracker?.entries ?? 0);
   const cut = t - 20;
   while (state.history.length && state.history[0].t < cut) state.history.shift();
 
@@ -427,6 +439,7 @@ function setStatus(text, cls = "") { const el = $("status"); el.textContent = te
 function setStatusLine(text) { $("statusline").textContent = text; }
 
 function stop() {
+  const duration = state.running ? performance.now() / 1000 - state.t0 : 0;
   state.running = false;
   clearInterval(state.metricTimer);
   state.audio?.stop();
@@ -435,10 +448,52 @@ function stop() {
   $("btn-stop").hidden = true;
   $("btn-size").hidden = true;
   document.body.classList.remove("running");
+  $("stage").hidden = true;
+  showReport(duration);
+}
+
+/* The set is over: say what it learned, rather than dumping the user back on a
+   landing page as if nothing had happened. */
+function showReport(duration) {
+  const r = buildReport({
+    log: state.sessionLog, dj: state.dj, tracker: state.tracker,
+    duration, peopleSeen: state.peopleSeen,
+    backend: state.backend, size: state.size,
+  });
+  $("rep-stats").innerHTML = r.stats.map(([k, v]) =>
+    `<div class="rs"><div class="rs-v">${v}</div><div class="rs-k">${k}</div></div>`).join("");
+  $("rep-tracks").innerHTML = r.trackRows;
+  $("rep-genres").innerHTML = r.genreRows;
+  $("rep-verdict").innerHTML = r.verdict;
+  $("report").hidden = false;
+  // Draw whenever the canvas actually has a size, which is not necessarily now:
+  // a report opened in a background tab, a collapsed pane or a window that has
+  // not laid out yet all report zero width, and a one-shot draw there leaves a
+  // permanently blank chart. A ResizeObserver covers the initial layout and
+  // every later resize with the same three lines.
+  const canvas = $("rep-timeline");
+  state.repaintReport?.disconnect();
+  const paint = () => {
+    if (canvas.clientWidth > 0) {
+      drawTimeline(canvas, {
+        log: r.log, dj: state.dj, duration: r.duration, peakAt: r.peakAt,
+      });
+    }
+  };
+  const ro = new ResizeObserver(paint);
+  ro.observe(canvas);
+  state.repaintReport = ro;
+  paint();
+}
+
+function closeReport() {
+  state.repaintReport?.disconnect();
+  state.repaintReport = null;
+  $("report").hidden = true;
   $("intro").hidden = false;
   backdrop?.start();
   $("btn-start").disabled = false;
-  $("btn-start").textContent = "START AGAIN";
+  $("btn-start").textContent = "Run another set";
 }
 
 $("btn-start").addEventListener("click", () => {
@@ -450,6 +505,7 @@ $("btn-start").addEventListener("click", () => {
 });
 $("btn-stop").addEventListener("click", stop);
 $("btn-size").addEventListener("click", () => setSize(state.size === 320 ? 640 : 320));
+$("rep-close").addEventListener("click", closeReport);
 
 const backdrop = new Backdrop($("bg"));
 backdrop.start();

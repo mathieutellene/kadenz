@@ -390,7 +390,10 @@ body.running #status { display: inline-block; }
 }
 
 /* -- type ---------------------------------------------------------------- */
-.intro-inner { max-width: 760px; width: 100%; }
+/* Fluid rather than a fixed column: on a wide screen a 760px block stranded
+   in the middle of 1440 looks like a mistake. The two ledes then sit side by
+   side, which fills the width without pushing either past a readable measure. */
+.intro-inner { width: min(1180px, 92vw); }
 .eyebrow {
   display: flex; align-items: center; gap: 8px;
   font-family: var(--mono); font-size: 10px; letter-spacing: 2.2px;
@@ -401,15 +404,20 @@ body.running #status { display: inline-block; }
   box-shadow: 0 0 0 3px rgba(30, 215, 96, .14);
 }
 .intro h1 {
-  font-size: clamp(30px, 4.6vw, 54px);
-  line-height: 1.06; letter-spacing: -1.6px; font-weight: 700;
-  margin-bottom: 26px;
+  /* The line break is authored in the markup, so no measure cap here -- a cap
+     and an explicit <br> fight each other and the headline ends up in four. */
+  font-size: clamp(30px, 4.4vw, 58px);
+  line-height: 1.05; letter-spacing: -1.8px; font-weight: 700;
+  margin-bottom: 32px;
   background: linear-gradient(180deg, #fff 30%, #a9a5bb 140%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
+.ledes { display: grid; grid-template-columns: 1fr 1fr; gap: 0 52px; }
 .lede {
-  font-size: 15.5px; line-height: 1.66; color: #b9b5c8;
-  max-width: 60ch; margin-bottom: 13px;
+  font-size: 15.5px; line-height: 1.68; color: #b9b5c8; margin: 0;
+}
+@media (max-width: 900px) {
+  .ledes { grid-template-columns: 1fr; gap: 14px; }
 }
 .lede strong { color: var(--text); font-weight: 600; }
 .lede em { color: #d5d2e0; font-style: italic; }
@@ -545,4 +553,108 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 384px; height: calc(
   align-items: center; justify-content: center; text-align: center;
   font-size: 13px; line-height: 1.6; color: var(--muted);
   background: rgba(8, 8, 11, .55); pointer-events: none;
+}
+
+/* =========================================================================
+   Set report — shown when a session ends. Same faceplate language as the
+   dashboard, but laid out to be read once rather than watched.
+   ========================================================================= */
+#report { display: flex; justify-content: center; padding: 46px 24px 80px; }
+.rep-inner { width: min(1180px, 92vw); }
+.rep-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 20px; margin-bottom: 30px;
+}
+.rep-head h2 {
+  font-size: clamp(24px, 3.2vw, 38px); line-height: 1.05;
+  letter-spacing: -1.2px; font-weight: 700;
+}
+
+.rep-stats {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px;
+  background: var(--line); border: 1px solid var(--line);
+  border-radius: 5px; overflow: hidden;
+}
+.rs { background: var(--panel); padding: 15px 16px 14px; }
+.rs-v {
+  font-family: var(--mono); font-size: 23px; font-weight: 700;
+  font-variant-numeric: tabular-nums; line-height: 1;
+}
+.rs-k {
+  font-size: 9px; letter-spacing: .9px; text-transform: uppercase;
+  color: var(--muted); margin-top: 7px;
+}
+
+.rep-verdict {
+  font-size: 15px; line-height: 1.6; color: #b9b5c8;
+  margin: 26px 0 6px; max-width: 78ch;
+}
+.rep-verdict b { color: var(--text); font-weight: 600; }
+
+.rep-block { margin-top: 34px; }
+.rep-block h3 {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.3px;
+  text-transform: uppercase; color: var(--muted);
+  display: flex; align-items: baseline; gap: 9px; margin-bottom: 12px;
+}
+.rep-block h3 span {
+  font-weight: 500; letter-spacing: .3px; text-transform: none; color: var(--dim);
+}
+#rep-timeline {
+  width: 100%; height: 150px; display: block;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 5px;
+}
+.rep-cols { display: grid; grid-template-columns: 1.7fr 1fr; gap: 40px; }
+
+/* tracks, ranked by what the room actually gave them */
+.rep-tracks { list-style: none; margin: 0; }
+.rep-tracks li {
+  display: grid; grid-template-columns: 26px 1fr 44px 48px;
+  align-items: center; gap: 12px;
+  padding: 11px 0; border-top: 1px solid var(--line);
+}
+.r-pos { font-family: var(--mono); font-size: 10px; color: var(--dim); }
+.r-main { min-width: 0; }
+.r-title {
+  display: block; font-size: 13px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.r-title em { color: var(--muted); font-weight: 400; font-style: normal; }
+.r-meta {
+  display: block; font-family: var(--mono); font-size: 9.5px;
+  color: var(--dim); margin-top: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.r-bar {
+  display: block; height: 3px; background: #1a1a22;
+  border-radius: 2px; overflow: hidden; margin-top: 7px;
+}
+.r-bar i { display: block; height: 100%; }
+.r-num {
+  font-family: var(--mono); font-size: 17px; font-weight: 700;
+  font-variant-numeric: tabular-nums; text-align: right;
+}
+.r-delta {
+  font-family: var(--mono); font-size: 10.5px; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.r-delta.up { color: var(--live); }
+.r-delta.down { color: var(--hot); }
+.r-empty {
+  font-size: 12px; line-height: 1.55; color: var(--dim);
+  border-top: 1px solid var(--line); padding-top: 12px;
+}
+.rep-genres .g-row, #rep-genres .g-row { margin-bottom: 13px; }
+#rep-genres .g-n {
+  font-family: var(--mono); font-size: 9px; color: var(--dim); margin-top: 4px;
+}
+.rep-foot {
+  font-size: 11px; line-height: 1.6; color: var(--dim);
+  margin-top: 38px; max-width: 80ch;
+}
+
+@media (max-width: 900px) {
+  .rep-stats { grid-template-columns: repeat(2, 1fr); }
+  .rep-cols { grid-template-columns: 1fr; gap: 8px; }
+  .rep-tracks li { grid-template-columns: 22px 1fr 40px 44px; gap: 9px; }
 }

@@ -249,18 +249,48 @@ export class Motion {
 
 /* Session-relative percentile scale, matching engine/metrics.py: an absolute
    motion number is meaningless across rooms, cameras and lighting, so 0-100
-   always means "against what THIS session has seen". */
+   always means "against what THIS session has seen".
+
+   With one catch that a pure percentile gets badly wrong. Rank alone has no
+   notion of "nothing is happening": point the camera at a person sitting
+   perfectly still and every sample is sensor noise, but the rank spreads that
+   noise right across 0-100 and the meter reads 40-60. Measured on a frozen
+   frame with +/-2 grey levels of noise, mean |delta| inside a person box sits
+   at 0.05; the same box on someone actually moving reads 11.6 -- a factor of
+   230. So the scale needs a floor before it needs a rank: below the gate the
+   answer is zero, not a percentile of noise. Same principle as refusing to
+   derive a BPM from silence. */
+const NOISE_EPS = 0.35;      // grey levels; ~7x the measured noise, ~3% of real motion
+const FLOOR_PCT = 0.15;      // what "quiet" looks like in this particular session
+const FLOOR_MARGIN = 1.5;
+
 export class Normaliser {
-  constructor(cap = 1200) { this.cap = cap; this.hist = []; }
+  constructor(cap = 1200) {
+    this.cap = cap;
+    this.hist = [];
+    this._gate = NOISE_EPS;
+    this._since = 0;
+  }
 
   add(v) {
     this.hist.push(v);
     if (this.hist.length > this.cap) this.hist.shift();
+    // The gate tracks the session, but recomputing a percentile on every sample
+    // would sort the whole history several times a second for no benefit.
+    if (++this._since >= 25) { this._since = 0; this._recompute(); }
+  }
+
+  _recompute() {
+    if (this.hist.length < 30) return;
+    const sorted = [...this.hist].sort((a, b) => a - b);
+    const floor = sorted[Math.floor(sorted.length * FLOOR_PCT)];
+    this._gate = Math.max(NOISE_EPS, floor * FLOOR_MARGIN);
   }
 
   rank(v) {
     const n = this.hist.length;
     if (n < 30) return null;             // refuse to score before calibrating
+    if (v <= this._gate) return 0;       // indistinguishable from a still room
     let below = 0;
     for (const h of this.hist) if (h < v) below++;
     return Math.max(0, Math.min(100, (100 * below) / n));

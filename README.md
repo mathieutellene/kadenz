@@ -217,6 +217,13 @@ python scripts/sim_loop.py               # the open-vs-closed table above
 python -m engine.selftest clip.mp4 30    # headless vision check
 ```
 
+Two checks guard the browser build, because both failures are silent:
+
+```bash
+python scripts/build_catalogue.py --check  # docs/catalogue.js still matches dj.py
+python scripts/stamp_version.py --check    # every asset on one cache-bust version
+```
+
 **Detection size is the main quality/speed dial** (`det_imgsz` in `config.yaml`).
 On the demo clip, measured on a laptop CPU with no GPU:
 
@@ -262,6 +269,13 @@ would unlock WASM threads:
 
 Same quality/speed dial as `det_imgsz`, same shape of trade-off, exposed as a
 button in the top bar. With WebGPU available it is far faster than either.
+
+When the set ends the page turns the session into a **set report**: the energy
+curve across the whole run with every track change marked and the peak called
+out, the tracks ranked by the response they actually earned, the genre table the
+floor taught it, and how often the crowd overruled the audio-feature match.
+Every figure there is read back from measurements already taken — a run too
+short to support a claim says so instead of showing a confident zero.
 
 The port is not taken on trust. Driven by the same synthetic floor, `docs/dj.js`
 reaches the same conclusions as `scripts/sim_loop.py`: the open loop asks for

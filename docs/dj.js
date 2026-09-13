@@ -10,7 +10,7 @@
  * The one thing that is NOT bit-identical is the exploration draw; see the
  * note on mulberry32 below.
  */
-import { CATALOGUE, MIXABLE_BPM_PCT, SIM_W, BPM_LO, BPM_HI } from "./catalogue.js";
+import { CATALOGUE, MIXABLE_BPM_PCT, SIM_W, BPM_LO, BPM_HI } from "./catalogue.js?v=22";
 
 const tempoNorm = (bpm) => (bpm - BPM_LO) / (BPM_HI - BPM_LO);
 
