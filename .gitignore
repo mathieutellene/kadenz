@@ -17,12 +17,16 @@ web/vendor/
 .DS_Store
 Thumbs.db
 
-# Local launchers and dev helpers
-*.bat
+# Everything under scripts/ is part of the project: the recommender demo, the
+# two consistency checks and the media pipeline that regenerates the README's
+# images. A blanket scripts/* ignore silently swallowed stamp_version.py after
+# the README had already started telling people to run it -- so the rule is now
+# an allow-list of extensions rather than a deny-all with exceptions.
 scripts/*
-# ...except the two the README tells people to run
-!scripts/sim_loop.py
-!scripts/build_catalogue.py
+!scripts/*.py
+
+# Windows launchers: small, and they are how the app actually gets started.
+*.bat.local
 
 # The browser build under docs/ IS the published site (GitHub Pages), model
 # weights included -- those are the one exception to ignoring model binaries.

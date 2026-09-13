@@ -340,6 +340,23 @@ fabricated BPM.
 
 ---
 
+## What is where
+
+```
+engine/            the desktop pipeline — vision, audio, metrics, the recommender
+web/               the desktop dashboard (served by run.py)
+docs/              the browser build, and the GitHub Pages site
+scripts/           sim_loop, the two --check guards, and the media pipeline
+assets/footage/    the three source clips, with provenance and rebuild commands
+notes/             portfolio and write-up material, not part of the product
+```
+
+Everything needed to rebuild this project from a clone is in it. Model weights
+(~7 MB for the desktop, already committed for the browser) download on first
+run; nothing else is fetched from anywhere.
+
+---
+
 ## License
 
 **AGPL-3.0** — required, because this depends on Ultralytics YOLO, which is
@@ -350,6 +367,9 @@ Demo footage: [Pixabay](https://pixabay.com/) content licence — one scene per
 visual: night stage (the animation at the top), rooftop club (the per-person
 still), open-air concert (the dashboard, and the only clip with real audio,
 which is why its BPM, level and groove sync are measured rather than blank).
+The three clips live in [`assets/footage/`](assets/footage/) with their
+provenance, the screening numbers behind the choice, and the commands that
+regenerate every image in this README.
 
 Track titles and artists in `engine/dj.py` are real releases, used as
 recognisable labels. Their audio-feature values are not: see *What is real and
