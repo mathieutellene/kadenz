@@ -65,8 +65,8 @@ change**, so the premise is testable instead of merely asserted:
 | `recommend_open()` — **open loop** | audio-feature similarity to what's playing + popularity prior | ❌ |
 | `recommend()` — **closed loop** | the crowd response *this floor* gave each genre and tempo band tonight | ✅ |
 
-A ten-track simulated set against a floor that happens to love peak techno
-(`scripts/sim_loop.py`):
+A ten-track simulated set against a floor that wants tech house and does not
+want pop (`scripts/sim_loop.py`):
 
 ```
 #  CLOSED LOOP PLAYED                              resp      Δ   OPEN LOOP WANTED INSTEAD
