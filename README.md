@@ -7,6 +7,8 @@
 
 ![Kadenz overlay](docs/media/demo.gif)
 
+<sub>Night stage. The dancers run amber; the people sitting on the steps in the foreground stay cool. Nothing is labelled by hand — the colour *is* the measured motion.</sub>
+
 ---
 
 ## The problem: recommendation is an open loop
@@ -126,9 +128,12 @@ ramp: **cyan = still → amber → hot pink = going off.**
 
 ![Per-person overlay](docs/media/overlay.jpg)
 
-*Cyan skeletons are the bystanders filming from the edge; the warm ones in the
-middle are the people actually dancing. Nobody labelled that — the split falls
-out of the motion measurement alone.*
+*Rooftop club, and an honest frame: the front rows are tracked, the packed crowd
+behind them is not. At that distance people are a few pixels tall and a person
+detector cannot see them at all (see [Limitations](#limitations)). Among the
+people it does resolve, the colour spread from cyan to orange is the measured
+motion — who is dancing and who is standing still, with nothing labelled by
+hand.*
 
 ---
 
@@ -271,7 +276,8 @@ fabricated BPM.
 AGPL-3.0. Swapping the detector for an Apache-2.0 model (RT-DETR, D-FINE) would
 allow a permissive licence.
 
-Demo footage: [Pixabay](https://pixabay.com/) content licence — three scenes
-(open-air concert, rooftop club, night stage). The track catalogue is fictional.
+Demo footage: [Pixabay](https://pixabay.com/) content licence — one scene per
+visual: night stage (the animation above), rooftop club (the per-person still),
+open-air concert (the dashboard). The track catalogue is fictional.
 Spotify is a trademark of Spotify AB; the mark appears here to identify the
 class of system Kadenz complements, and implies no affiliation or endorsement.
