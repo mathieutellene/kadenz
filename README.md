@@ -9,7 +9,9 @@
 
 <sub>Night stage. Nearly everyone in frame is tracked — the dancers run amber, the people sitting on the steps in the foreground stay cool. Nothing is labelled by hand: the colour <em>is</em> the measured motion.</sub>
 
-### ▶ [Try it on your own camera — no install](https://mathieutellene.github.io/kadenz/)
+### 🎥 [Run it on your own camera](https://mathieutellene.github.io/kadenz/)
+
+In the browser. Nothing to install, nothing leaves your machine.
 
 The whole loop also runs **client-side in a browser**: the same YOLOv8-pose
 weights exported to ONNX, the same recommender, both models ranking side by
